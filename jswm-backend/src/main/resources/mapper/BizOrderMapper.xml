@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jswm.mapper.BizOrderMapper">
+    <resultMap id="BaseResultMap" type="com.jswm.entity.BizOrder">
+        <id column="id" property="id"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="user_id" property="userId"/>
+        <result column="merchant_id" property="merchantId"/>
+        <result column="total_amount" property="totalAmount"/>
+        <result column="pay_amount" property="payAmount"/>
+        <result column="delivery_fee" property="deliveryFee"/>
+        <result column="discount_amount" property="discountAmount"/>
+        <result column="receiver_name" property="receiverName"/>
+        <result column="receiver_phone" property="receiverPhone"/>
+        <result column="delivery_address" property="deliveryAddress"/>
+        <result column="remark" property="remark"/>
+        <result column="status" property="status"/>
+        <result column="pay_type" property="payType"/>
+        <result column="pay_time" property="payTime"/>
+        <result column="deliver_time" property="deliverTime"/>
+        <result column="complete_time" property="completeTime"/>
+        <result column="cancel_reason" property="cancelReason"/>
+        <result column="cancel_time" property="cancelTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_deleted" property="isDeleted"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, order_no, user_id, merchant_id, total_amount, pay_amount, delivery_fee, discount_amount,
+        receiver_name, receiver_phone, delivery_address, remark, status, pay_type, pay_time,
+        deliver_time, complete_time, cancel_reason, cancel_time, create_time, update_time, is_deleted
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM biz_order
+        WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <select id="selectByOrderNo" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM biz_order
+        WHERE order_no = #{orderNo} AND is_deleted = 0
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM biz_order
+        WHERE is_deleted = 0
+        <if test="userId != null">AND user_id = #{userId}</if>
+        <if test="merchantId != null">AND merchant_id = #{merchantId}</if>
+        <if test="status != null">AND status = #{status}</if>
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="com.jswm.entity.BizOrder" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO biz_order (order_no, user_id, merchant_id, total_amount, pay_amount, delivery_fee, discount_amount,
+                              receiver_name, receiver_phone, delivery_address, remark, status, pay_type)
+        VALUES (#{orderNo}, #{userId}, #{merchantId}, #{totalAmount}, #{payAmount}, #{deliveryFee}, #{discountAmount},
+                #{receiverName}, #{receiverPhone}, #{deliveryAddress}, #{remark}, #{status}, #{payType})
+    </insert>
+
+    <update id="updateById" parameterType="com.jswm.entity.BizOrder">
+        UPDATE biz_order
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="payType != null">pay_type = #{payType},</if>
+            <if test="payTime != null">pay_time = #{payTime},</if>
+            <if test="deliverTime != null">deliver_time = #{deliverTime},</if>
+            <if test="completeTime != null">complete_time = #{completeTime},</if>
+            <if test="cancelReason != null">cancel_reason = #{cancelReason},</if>
+            <if test="cancelTime != null">cancel_time = #{cancelTime},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE biz_order SET is_deleted = 1, update_time = NOW() WHERE id = #{id}
+    </update>
+</mapper>

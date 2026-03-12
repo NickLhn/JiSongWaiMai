@@ -1,0 +1,154 @@
+# 吉送外卖 - Git忽略文件配置
+
+# ==================== Java / Spring Boot ====================
+# 编译输出
+jswm-backend/target/
+jswm-backend/!.mvn/wrapper/maven-wrapper.jar
+jswm-backend/!**/src/main/**/target/
+jswm-backend/!**/src/test/**/target/
+
+# IDE - IntelliJ IDEA
+jswm-backend/.idea/
+jswm-backend/*.iws
+jswm-backend/*.iml
+jswm-backend/*.ipr
+
+# IDE - Eclipse
+jswm-backend/.apt_generated
+jswm-backend/.classpath
+jswm-backend/.factorypath
+jswm-backend/.project
+jswm-backend/.settings/
+jswm-backend/.springBeans
+jswm-backend/.sts4-cache
+
+# IDE - NetBeans
+jswm-backend/nbproject/private/
+jswm-backend/nbbuild/
+jswm-backend/dist/
+jswm-backend/nbdist/
+jswm-backend/.nb-gradle/
+
+# ==================== Node.js / Vue.js ====================
+# 依赖目录
+jswm-frontend/node_modules/
+jswm-frontend/.pnpm-store/
+
+# 构建输出
+jswm-frontend/dist/
+jswm-frontend/dist-ssr/
+jswm-frontend/*.local
+
+# 日志文件
+jswm-frontend/npm-debug.log*
+jswm-frontend/yarn-debug.log*
+jswm-frontend/yarn-error.log*
+jswm-frontend/pnpm-debug.log*
+
+# IDE - VSCode
+jswm-frontend/.vscode/*
+!jswm-frontend/.vscode/extensions.json
+jswm-frontend/.idea/
+
+# ==================== 数据库 ====================
+# 本地数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# ==================== 日志文件 ====================
+*.log
+logs/
+log/
+
+# ==================== 操作系统文件 ====================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.nfs*
+
+# ==================== 环境配置文件 ====================
+# 本地环境配置（包含敏感信息）
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 应用配置文件（可能包含数据库密码等）
+application-local.yml
+application-local.properties
+application-dev.yml
+application-dev.properties
+application-prod.yml
+application-prod.properties
+
+# ==================== 上传文件 ====================
+# 用户上传的文件
+uploads/
+upload/
+files/
+images/
+
+# ==================== 测试报告 ====================
+coverage/
+.nyc_output/
+*.lcov
+
+# ==================== 临时文件 ====================
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# ==================== 打包文件 ====================
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# ==================== 文档生成 ====================
+# 自动生成的文档
+docs/.vuepress/dist/
+
+# ==================== 其他 ====================
+# 本地配置文件
+*.local
+
+# 证书文件
+*.pem
+*.key
+*.crt
+*.p12

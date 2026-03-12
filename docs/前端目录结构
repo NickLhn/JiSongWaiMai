@@ -1,0 +1,35 @@
+jswm-frontend/
+├── package.json              # 项目依赖配置
+├── vite.config.js            # Vite配置
+├── index.html                # HTML入口
+└── src/
+    ├── main.js               # 应用入口
+    ├── App.vue               # 根组件
+    ├── router/
+    │   └── index.js          # 路由配置
+    ├── api/
+    │   ├── user.js           # 用户API
+    │   ├── merchant.js       # 商家API
+    │   ├── dish.js           # 菜品API
+    │   ├── cart.js           # 购物车API
+    │   └── order.js          # 订单API
+    ├── utils/
+    │   ├── request.js       # Axios请求封装
+    │   └── auth.js           # Token管理
+    ├── components/
+    │   └── OrderList.vue     # 订单列表组件
+    └── views/
+        ├── Login.vue         # 登录页
+        ├── Register.vue      # 注册页
+        ├── student/          # 学生端页面
+        │   ├── Home.vue      # 首页（商家列表）
+        │   ├── Shop.vue      # 商家详情
+        │   ├── Cart.vue      # 购物车
+        │   ├── Orders.vue    # 我的订单
+        │   └── Profile.vue   # 个人中心
+        ├── merchant/         # 商家端页面
+        │   ├── Dashboard.vue # 商家后台首页
+        │   ├── Dishes.vue    # 菜品管理
+        │   └── Orders.vue    # 订单管理
+        └── admin/            # 管理员端页面
+            └── Dashboard.vue # 管理员后台首页

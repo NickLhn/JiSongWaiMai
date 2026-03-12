@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jswm.mapper.BizCartMapper">
+    <resultMap id="BaseResultMap" type="com.jswm.entity.BizCart">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="dish_id" property="dishId"/>
+        <result column="merchant_id" property="merchantId"/>
+        <result column="quantity" property="quantity"/>
+        <result column="checked" property="checked"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, dish_id, merchant_id, quantity, checked, create_time, update_time
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM biz_cart
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM biz_cart
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByUserAndDish" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM biz_cart
+        WHERE user_id = #{userId} AND dish_id = #{dishId}
+    </select>
+
+    <insert id="insert" parameterType="com.jswm.entity.BizCart" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO biz_cart (user_id, dish_id, merchant_id, quantity, checked)
+        VALUES (#{userId}, #{dishId}, #{merchantId}, #{quantity}, #{checked})
+    </insert>
+
+    <update id="updateById" parameterType="com.jswm.entity.BizCart">
+        UPDATE biz_cart
+        <set>
+            <if test="quantity != null">quantity = #{quantity},</if>
+            <if test="checked != null">checked = #{checked},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM biz_cart WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByUserId">
+        DELETE FROM biz_cart WHERE user_id = #{userId}
+    </delete>
+</mapper>

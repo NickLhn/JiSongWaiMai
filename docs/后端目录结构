@@ -1,0 +1,61 @@
+jswm-backend/
+├── pom.xml                                    # Maven配置
+├── src/main/
+│   ├── java/com/jswm/
+│   │   ├── JswmApplication.java               # 启动类
+│   │   ├── config/                           # 配置类
+│   │   │   ├── WebConfig.java                # CORS配置
+│   │   │   └── RedisConfig.java             # Redis配置
+│   │   ├── controller/                       # 控制器层
+│   │   │   ├── AuthController.java           # 认证接口
+│   │   │   ├── UserController.java           # 用户接口
+│   │   │   ├── MerchantController.java       # 商家接口
+│   │   │   ├── DishController.java           # 菜品接口
+│   │   │   ├── CartController.java           # 购物车接口
+│   │   │   └── OrderController.java          # 订单接口
+│   │   ├── service/                          # 服务层
+│   │   │   ├── UserService.java
+│   │   │   ├── MerchantService.java
+│   │   │   ├── DishService.java
+│   │   │   ├── CartService.java
+│   │   │   ├── OrderService.java
+│   │   │   └── impl/                        # 服务实现
+│   │   ├── mapper/                           # 数据访问层
+│   │   │   ├── SysUserMapper.java
+│   │   │   ├── BizMerchantMapper.java
+│   │   │   ├── BizDishMapper.java
+│   │   │   ├── BizOrderMapper.java
+│   │   │   └── BizCartMapper.java
+│   │   ├── entity/                           # 实体类
+│   │   │   ├── SysUser.java
+│   │   │   ├── BizMerchant.java
+│   │   │   ├── BizDish.java
+│   │   │   ├── BizCart.java
+│   │   │   ├── BizOrder.java
+│   │   │   ├── BizOrderItem.java
+│   │   │   ├── BizReview.java
+│   │   │   ├── BizAddress.java
+│   │   │   ├── BizCategory.java
+│   │   │   ├── BizFavorite.java
+│   │   │   └── BizMerchantQualification.java
+│   │   ├── dto/                              # 数据传输对象
+│   │   │   ├── request/                     # 请求DTO
+│   │   │   └── response/                    # 响应DTO
+│   │   ├── common/                           # 公共模块
+│   │   │   ├── Result.java                  # 统一响应
+│   │   │   ├── PageResult.java              # 分页响应
+│   │   │   └── Constants.java               # 常量定义
+│   │   ├── exception/                        # 异常处理
+│   │   │   ├── BusinessException.java
+│   │   │   └── GlobalExceptionHandler.java
+│   │   └── utils/                            # 工具类
+│   │       ├── JwtUtils.java                 # JWT工具
+│   │       └── OrderNoGenerator.java        # 订单号生成
+│   └── resources/
+│       ├── application.yml                   # 主配置文件
+│       └── mapper/                           # MyBatis映射文件
+│           ├── SysUserMapper.xml
+│           ├── BizMerchantMapper.xml
+│           ├── BizDishMapper.xml
+│           ├── BizOrderMapper.xml
+│           └── BizCartMapper.xml
