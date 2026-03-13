@@ -180,7 +180,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getOrders, cancelOrder as cancelOrderApi, confirmOrder as confirmOrderApi } from '@/api/order'
+import { getOrderList, cancelOrder as cancelOrderApi, confirmOrder as confirmOrderApi } from '@/api/order'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, DocumentDelete, Food, ArrowRight, Warning, CircleCheck, CircleClose, Timer } from '@element-plus/icons-vue'
 
@@ -225,7 +225,7 @@ const emptyDesc = computed(() => {
 const loadOrders = async () => {
   try {
     loading.value = true
-    const res = await getOrders()
+    const res = await getOrderList()
     orders.value = res.data || []
   } catch (error) {
     ElMessage.error('加载订单失败')

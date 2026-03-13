@@ -187,6 +187,9 @@ onMounted(() => {
   min-height: 100vh;
   background: #f5f5f5;
   padding-bottom: 80px;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
 }
 
 .page-header {
@@ -400,6 +403,10 @@ onMounted(() => {
   padding: 12px 16px;
   background: white;
   box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  z-index: 1000;
+  max-width: 600px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .footer-info {

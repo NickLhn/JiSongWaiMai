@@ -116,6 +116,16 @@
                 <el-icon><Timer /></el-icon>
                 <span>30分钟</span>
               </div>
+              <button 
+                class="favorite-btn-small" 
+                :class="{ active: merchant.isFavorite }"
+                @click.stop="toggleFavorite(merchant)"
+              >
+                <el-icon :size="16">
+                  <StarFilled v-if="merchant.isFavorite" />
+                  <Star v-else />
+                </el-icon>
+              </button>
             </div>
             
             <div class="card-content">
@@ -152,7 +162,8 @@ import { getMerchantList } from '@/api/merchant'
 import { getCartList } from '@/api/cart'
 import { getUserInfo, removeToken, removeUserInfo } from '@/utils/auth'
 import { ElMessage } from 'element-plus'
-import { ShoppingCart, ArrowDown, User, Document, SwitchButton, Search, Timer, StarFilled } from '@element-plus/icons-vue'
+import { ShoppingCart, ArrowDown, User, Document, SwitchButton, Search, Timer, StarFilled, Star } from '@element-plus/icons-vue'
+import { addFavorite, removeFavorite } from '@/api/user'
 
 const router = useRouter()
 const merchants = ref([])
@@ -232,6 +243,21 @@ const handleLogout = () => {
   removeUserInfo()
   ElMessage.success('退出成功')
   router.push('/login')
+}
+
+const toggleFavorite = async (merchant) => {
+  try {
+    if (merchant.isFavorite) {
+      await removeFavorite(merchant.id)
+      ElMessage.success('已取消收藏')
+    } else {
+      await addFavorite(merchant.id)
+      ElMessage.success('收藏成功')
+    }
+    merchant.isFavorite = !merchant.isFavorite
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
 }
 
 onMounted(() => {
@@ -578,6 +604,32 @@ onMounted(() => {
   color: white;
   font-size: 12px;
   border-radius: 20px;
+}
+
+.favorite-btn-small {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  color: #999;
+  transition: all 0.2s;
+}
+
+.favorite-btn-small.active {
+  color: #ff6b35;
+}
+
+.favorite-btn-small:hover {
+  transform: scale(1.1);
 }
 
 .card-content {

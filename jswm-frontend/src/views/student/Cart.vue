@@ -66,7 +66,8 @@
       </div>
     </main>
 
-    <footer v-if="cartItems.length > 0" class="cart-footer">
+    <!-- 底部结算栏 -->
+    <div v-show="!loading && cartItems.length > 0" class="cart-footer">
       <div class="footer-info">
         <span class="total-label">合计:</span>
         <span class="total-amount">¥{{ cartTotal }}</span>
@@ -74,7 +75,7 @@
       <button class="checkout-btn" @click="goToCheckout">
         去结算
       </button>
-    </footer>
+    </div>
   </div>
 </template>
 
@@ -111,7 +112,7 @@ const loadCart = async () => {
 
 const increaseQuantity = async (item) => {
   try {
-    await updateCartItem(item.id, { quantity: item.quantity + 1 })
+    await updateCartItem(item.id, item.quantity + 1)
     await loadCart()
   } catch (error) {
     ElMessage.error('操作失败')
@@ -121,7 +122,7 @@ const increaseQuantity = async (item) => {
 const decreaseQuantity = async (item) => {
   try {
     if (item.quantity > 1) {
-      await updateCartItem(item.id, { quantity: item.quantity - 1 })
+      await updateCartItem(item.id, item.quantity - 1)
     } else {
       await deleteCartItem(item.id)
     }
@@ -161,7 +162,10 @@ onMounted(() => {
 .cart-page {
   min-height: 100vh;
   background: #f8f9fa;
-  padding-bottom: 80px;
+  padding-bottom: 100px;
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .page-header {
@@ -357,6 +361,10 @@ onMounted(() => {
   padding: 12px 16px;
   background: white;
   box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
+  z-index: 1000;
+  max-width: 600px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .footer-info {
@@ -378,13 +386,24 @@ onMounted(() => {
 
 .checkout-btn {
   padding: 14px 32px;
-  background: #ff6b35;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
   color: white;
   border: none;
   border-radius: 24px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  transition: all 0.3s ease;
+}
+
+.checkout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4);
+}
+
+.checkout-btn:active {
+  transform: translateY(0);
 }
 
 .skeleton-list {

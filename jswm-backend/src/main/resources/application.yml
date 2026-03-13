@@ -67,9 +67,7 @@ logging:
 # 阿里云 OSS 配置（申请后填写）
 oss:
   enabled: false  # 是否启用OSS，申请后改为true
-  endpoint: your-oss-endpoint.aliyuncs.com
+  endpoint: your-oss-endpoint
   accessKeyId: your-access-key-id
   accessKeySecret: your-access-key-secret
   bucketName: your-bucket-name
-  # 自定义域名（可选，配置后使用自定义域名访问）
-  customDomain: https://your-domain.com

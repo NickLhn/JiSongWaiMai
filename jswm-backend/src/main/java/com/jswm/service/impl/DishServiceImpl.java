@@ -29,6 +29,13 @@ public class DishServiceImpl implements DishService {
         dish.setSales(0);
         dish.setRating(new java.math.BigDecimal("5.0"));
         dish.setStatus(0);
+        // 设置默认值，避免数据库非空约束错误
+        if (dish.getStock() == null) {
+            dish.setStock(999);
+        }
+        if (dish.getCategoryId() == null) {
+            dish.setCategoryId(1L);
+        }
         dishMapper.insert(dish);
     }
 

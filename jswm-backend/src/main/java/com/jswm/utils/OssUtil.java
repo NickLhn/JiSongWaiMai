@@ -55,7 +55,7 @@ public class OssUtil {
         String originalFilename = file.getOriginalFilename();
         String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
         String newFileName = UUID.randomUUID().toString() + suffix;
-        String objectName = directory + "/" + newFileName;
+        String objectName = "JiSongWaiMai/" + directory + "/" + newFileName;
 
         // 上传文件
         PutObjectRequest putObjectRequest = new PutObjectRequest(

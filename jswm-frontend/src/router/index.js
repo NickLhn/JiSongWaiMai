@@ -57,6 +57,16 @@ const studentRoutes = {
       component: () => import('@/views/student/OrderCreate.vue')
     },
     {
+      path: 'order/:id',
+      name: 'StudentOrderDetail',
+      component: () => import('@/views/student/OrderDetail.vue')
+    },
+    {
+      path: 'payment',
+      name: 'StudentPayment',
+      component: () => import('@/views/student/Payment.vue')
+    },
+    {
       path: 'profile',
       name: 'StudentProfile',
       component: () => import('@/views/student/Profile.vue')

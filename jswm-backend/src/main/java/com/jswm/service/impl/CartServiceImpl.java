@@ -1,5 +1,6 @@
 package com.jswm.service.impl;
 
+import com.jswm.dto.CartItemDTO;
 import com.jswm.entity.BizCart;
 import com.jswm.exception.BusinessException;
 import com.jswm.mapper.BizCartMapper;
@@ -17,6 +18,11 @@ public class CartServiceImpl implements CartService {
     @Override
     public List<BizCart> getCartByUserId(Long userId) {
         return cartMapper.selectByUserId(userId);
+    }
+
+    @Override
+    public List<CartItemDTO> getCartDetailByUserId(Long userId) {
+        return cartMapper.selectCartDetailByUserId(userId);
     }
 
     @Override

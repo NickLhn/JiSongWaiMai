@@ -107,7 +107,7 @@
 import { ref, onMounted } from 'vue'
 import { Plus, Food } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getDishList, addDish, updateDish, deleteDish as deleteDishApi } from '@/api/dish'
+import { getMyDishes, addDish, updateDish, deleteDish as deleteDishApi } from '@/api/dish'
 
 const dishes = ref([])
 const loading = ref(false)
@@ -133,7 +133,7 @@ const rules = {
 const loadDishes = async () => {
   try {
     loading.value = true
-    const res = await getDishList()
+    const res = await getMyDishes()
     dishes.value = res.data || []
   } catch (error) {
     ElMessage.error('加载菜品失败')

@@ -8,6 +8,15 @@ export const getDishList = (params) => {
   })
 }
 
+// 获取当前商家的菜品列表
+export const getMyDishes = (params) => {
+  return request({
+    url: '/v1/dishes/my',
+    method: 'get',
+    params
+  })
+}
+
 export const getDishDetail = (id) => {
   return request({
     url: `/v1/dishes/${id}`,

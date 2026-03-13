@@ -1,6 +1,7 @@
 package com.jswm.controller;
 
 import com.jswm.common.Result;
+import com.jswm.dto.CartItemDTO;
 import com.jswm.entity.BizCart;
 import com.jswm.service.CartService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +16,9 @@ public class CartController {
     private CartService cartService;
 
     @GetMapping
-    public Result<List<BizCart>> getCart(@RequestHeader("Authorization") String token) {
+    public Result<List<CartItemDTO>> getCart(@RequestHeader("Authorization") String token) {
         Long userId = com.jswm.utils.JwtUtils.getUserId(token);
-        List<BizCart> list = cartService.getCartByUserId(userId);
+        List<CartItemDTO> list = cartService.getCartDetailByUserId(userId);
         return Result.success(list);
     }
 

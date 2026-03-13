@@ -11,6 +11,12 @@
         <span class="shop-name">{{ merchant.shopName || '商家详情' }}</span>
       </div>
       <div class="header-right">
+        <button class="favorite-btn" @click="toggleFavorite">
+          <el-icon :size="20" :color="isFavorite ? '#ff6b35' : '#fff'">
+            <StarFilled v-if="isFavorite" />
+            <Star v-else />
+          </el-icon>
+        </button>
         <button class="cart-btn" @click="showCartDrawer = true">
           <el-icon><ShoppingCart /></el-icon>
           <span v-if="cartItemCount > 0" class="cart-badge">{{ cartItemCount }}</span>
@@ -181,7 +187,8 @@ import { getMerchantDetail } from '@/api/merchant'
 import { getDishList } from '@/api/dish'
 import { getCartList, addToCart as addCartItem, updateCartItem, deleteCartItem, clearCart as clearCartApi } from '@/api/cart'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, ShoppingCart, StarFilled, Plus, Minus, Delete } from '@element-plus/icons-vue'
+import { ArrowLeft, ShoppingCart, StarFilled, Star, Plus, Minus, Delete } from '@element-plus/icons-vue'
+import { addFavorite, removeFavorite, checkFavorite } from '@/api/user'
 
 const route = useRoute()
 const router = useRouter()
@@ -193,6 +200,7 @@ const cart = ref([])
 const loading = ref(true)
 const selectedCategory = ref('全部')
 const showCartDrawer = ref(false)
+const isFavorite = ref(false)
 
 const categories = computed(() => {
   const cats = ['全部', ...new Set(dishes.value.map(d => d.category))]
@@ -223,15 +231,41 @@ const loadMerchant = async () => {
   try {
     const res = await getMerchantDetail(merchantId)
     merchant.value = res.data
+    // 检查是否已收藏
+    checkFavoriteStatus()
   } catch (error) {
     ElMessage.error('加载商家信息失败')
+  }
+}
+
+const checkFavoriteStatus = async () => {
+  try {
+    const res = await checkFavorite(merchantId)
+    isFavorite.value = res.data
+  } catch (error) {
+    console.error('检查收藏状态失败', error)
+  }
+}
+
+const toggleFavorite = async () => {
+  try {
+    if (isFavorite.value) {
+      await removeFavorite(merchantId)
+      ElMessage.success('已取消收藏')
+    } else {
+      await addFavorite(merchantId)
+      ElMessage.success('收藏成功')
+    }
+    isFavorite.value = !isFavorite.value
+  } catch (error) {
+    ElMessage.error('操作失败')
   }
 }
 
 const loadDishes = async () => {
   try {
     loading.value = true
-    const res = await getDishList({ merchantId, status: 1 })
+    const res = await getDishList({ merchantId: parseInt(merchantId), status: 1 })
     dishes.value = res.data
   } catch (error) {
     ElMessage.error('加载菜品失败')
@@ -253,7 +287,7 @@ const addToCart = async (dish) => {
   try {
     const existingItem = cart.value.find(item => item.dishId === dish.id)
     if (existingItem) {
-      await updateCartItem(existingItem.id, { quantity: existingItem.quantity + 1 })
+      await updateCartItem(existingItem.id, existingItem.quantity + 1)
     } else {
       await addCartItem({
         merchantId: parseInt(merchantId),
@@ -273,7 +307,7 @@ const removeFromCart = async (dish) => {
     const existingItem = cart.value.find(item => item.dishId === dish.id)
     if (existingItem) {
       if (existingItem.quantity > 1) {
-        await updateCartItem(existingItem.id, { quantity: existingItem.quantity - 1 })
+        await updateCartItem(existingItem.id, existingItem.quantity - 1)
       } else {
         await deleteCartItem(existingItem.id)
       }
@@ -331,7 +365,7 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
-.back-btn, .cart-btn {
+.back-btn, .cart-btn, .favorite-btn {
   width: 40px;
   height: 40px;
   display: flex;
@@ -344,9 +378,13 @@ onMounted(() => {
   transition: all 0.2s;
 }
 
-.back-btn:hover, .cart-btn:hover {
+.back-btn:hover, .cart-btn:hover, .favorite-btn:hover {
   background: #ff6b35;
   color: white;
+}
+
+.favorite-btn {
+  margin-right: 8px;
 }
 
 .cart-btn {

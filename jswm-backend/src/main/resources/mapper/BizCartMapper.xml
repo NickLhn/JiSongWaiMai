@@ -12,6 +12,21 @@
         <result column="update_time" property="updateTime"/>
     </resultMap>
 
+    <resultMap id="CartVOMap" type="com.jswm.dto.CartItemDTO">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="dish_id" property="dishId"/>
+        <result column="merchant_id" property="merchantId"/>
+        <result column="quantity" property="quantity"/>
+        <result column="checked" property="checked"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="dish_name" property="dishName"/>
+        <result column="dish_price" property="dishPrice"/>
+        <result column="dish_image" property="dishImage"/>
+        <result column="merchant_name" property="merchantName"/>
+    </resultMap>
+
     <sql id="Base_Column_List">
         id, user_id, dish_id, merchant_id, quantity, checked, create_time, update_time
     </sql>
@@ -27,6 +42,19 @@
         FROM biz_cart
         WHERE user_id = #{userId}
         ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询购物车详情（包含菜品和商家信息） -->
+    <select id="selectCartDetailByUserId" resultMap="CartVOMap">
+        SELECT
+            c.id, c.user_id, c.dish_id, c.merchant_id, c.quantity, c.checked, c.create_time, c.update_time,
+            d.name as dish_name, d.price as dish_price, d.image as dish_image,
+            m.shop_name as merchant_name
+        FROM biz_cart c
+        LEFT JOIN biz_dish d ON c.dish_id = d.id
+        LEFT JOIN biz_merchant m ON c.merchant_id = m.id
+        WHERE c.user_id = #{userId}
+        ORDER BY c.create_time DESC
     </select>
 
     <select id="selectByUserAndDish" resultMap="BaseResultMap">

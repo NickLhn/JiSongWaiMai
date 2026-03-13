@@ -78,6 +78,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getUserInfo, updateUserInfo, updateAvatar } from '@/api/user'
+import { uploadFile } from '@/api/upload'
+import { setUserInfo } from '@/utils/auth'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Camera } from '@element-plus/icons-vue'
 
@@ -121,12 +123,15 @@ const handleFileChange = async (e) => {
     return
   }
 
-  // 模拟上传，实际应该调用上传接口
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    userInfo.value.avatar = e.target.result
+  // 上传文件到服务器
+  try {
+    ElMessage.info('正在上传...')
+    const res = await uploadFile(file, 'avatars')
+    userInfo.value.avatar = res.data
+    ElMessage.success('头像上传成功')
+  } catch (error) {
+    ElMessage.error('头像上传失败')
   }
-  reader.readAsDataURL(file)
 }
 
 const saveProfile = async () => {
@@ -136,18 +141,19 @@ const saveProfile = async () => {
   }
 
   try {
-    await updateUserInfo({
+    // 更新用户信息（包括头像URL）
+    const updateData = {
       realName: userInfo.value.realName,
       phone: userInfo.value.phone,
-      email: userInfo.value.email
-    })
-    
-    // 如果有新头像，上传头像
-    if (userInfo.value.avatar && userInfo.value.avatar.startsWith('data:')) {
-      // 实际应该上传图片到服务器，这里模拟
-      await updateAvatar(userInfo.value.avatar)
+      email: userInfo.value.email,
+      avatar: userInfo.value.avatar
     }
-    
+    await updateUserInfo(updateData)
+
+    // 更新本地存储的用户信息
+    const currentUserInfo = userInfo.value
+    setUserInfo(currentUserInfo)
+
     ElMessage.success('保存成功')
     router.back()
   } catch (error) {
