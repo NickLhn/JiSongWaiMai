@@ -52,9 +52,44 @@ const studentRoutes = {
       component: () => import('@/views/student/Orders.vue')
     },
     {
+      path: 'orders/create',
+      name: 'StudentOrderCreate',
+      component: () => import('@/views/student/OrderCreate.vue')
+    },
+    {
       path: 'profile',
       name: 'StudentProfile',
       component: () => import('@/views/student/Profile.vue')
+    },
+    {
+      path: 'favorites',
+      name: 'StudentFavorites',
+      component: () => import('@/views/student/Favorites.vue')
+    },
+    {
+      path: 'coupons',
+      name: 'StudentCoupons',
+      component: () => import('@/views/student/Coupons.vue')
+    },
+    {
+      path: 'address',
+      name: 'StudentAddress',
+      component: () => import('@/views/student/Address.vue')
+    },
+    {
+      path: 'profile/edit',
+      name: 'StudentEditProfile',
+      component: () => import('@/views/student/EditProfile.vue')
+    },
+    {
+      path: 'password/change',
+      name: 'StudentChangePassword',
+      component: () => import('@/views/student/ChangePassword.vue')
+    },
+    {
+      path: 'settings',
+      name: 'StudentSettings',
+      component: () => import('@/views/student/Settings.vue')
     }
   ]
 }

@@ -69,4 +69,10 @@ public class OrderController {
         orderService.completeOrder(id);
         return Result.success("订单已完成", null);
     }
+
+    @PostMapping("/{id}/confirm")
+    public Result<Void> confirmOrder(@PathVariable Long id) {
+        orderService.completeOrder(id);
+        return Result.success("确认收货成功", null);
+    }
 }

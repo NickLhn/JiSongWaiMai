@@ -45,28 +45,28 @@
     <!-- Menu List -->
     <section class="menu-section">
       <div class="menu-group">
-        <div class="menu-item" @click="$router.push('/orders')">
+        <div class="menu-item" @click="goTo('/orders')">
           <div class="menu-icon orange">
             <el-icon><Document /></el-icon>
           </div>
           <span class="menu-text">我的订单</span>
           <el-icon class="menu-arrow"><ArrowRight /></el-icon>
         </div>
-        <div class="menu-item" @click="$router.push('/favorites')">
+        <div class="menu-item" @click="goTo('/favorites')">
           <div class="menu-icon red">
             <el-icon><Star /></el-icon>
           </div>
           <span class="menu-text">我的收藏</span>
           <el-icon class="menu-arrow"><ArrowRight /></el-icon>
         </div>
-        <div class="menu-item" @click="$router.push('/coupons')">
+        <div class="menu-item" @click="goTo('/coupons')">
           <div class="menu-icon yellow">
             <el-icon><Ticket /></el-icon>
           </div>
           <span class="menu-text">优惠券</span>
           <el-icon class="menu-arrow"><ArrowRight /></el-icon>
         </div>
-        <div class="menu-item" @click="$router.push('/address')">
+        <div class="menu-item" @click="goTo('/address')">
           <div class="menu-icon blue">
             <el-icon><Location /></el-icon>
           </div>
@@ -76,14 +76,14 @@
       </div>
 
       <div class="menu-group">
-        <div class="menu-item" @click="showEditProfile = true">
+        <div class="menu-item" @click="goTo('/profile/edit')">
           <div class="menu-icon green">
             <el-icon><Edit /></el-icon>
           </div>
           <span class="menu-text">编辑资料</span>
           <el-icon class="menu-arrow"><ArrowRight /></el-icon>
         </div>
-        <div class="menu-item" @click="showChangePassword = true">
+        <div class="menu-item" @click="goTo('/password/change')">
           <div class="menu-icon purple">
             <el-icon><Lock /></el-icon>
           </div>
@@ -93,7 +93,7 @@
       </div>
 
       <div class="menu-group">
-        <div class="menu-item" @click="showSettings = true">
+        <div class="menu-item" @click="goTo('/settings')">
           <div class="menu-icon gray">
             <el-icon><Setting /></el-icon>
           </div>
@@ -195,6 +195,10 @@ const updateProfile = async () => {
   } finally {
     updating.value = false
   }
+}
+
+const goTo = (path) => {
+  router.push(path)
 }
 
 const handleLogout = async () => {

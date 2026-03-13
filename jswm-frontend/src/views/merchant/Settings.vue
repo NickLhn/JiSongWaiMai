@@ -2,63 +2,120 @@
   <div class="merchant-settings">
     <h2>店铺设置</h2>
     
-    <div class="settings-card">
-      <h3>基本信息</h3>
-      <div class="form-group">
-        <label>店铺名称</label>
-        <input v-model="form.shopName" type="text" />
-      </div>
-      <div class="form-group">
-        <label>店铺公告</label>
-        <textarea v-model="form.notice" rows="3"></textarea>
-      </div>
-      <div class="form-group">
-        <label>联系电话</label>
-        <input v-model="form.phone" type="tel" />
-      </div>
-      <div class="form-group">
-        <label>营业时间</label>
-        <input v-model="form.businessHours" type="text" placeholder="如: 07:00-21:00" />
-      </div>
+    <div v-if="loading" class="loading-state">
+      <el-skeleton :rows="6" animated />
     </div>
     
-    <div class="settings-card">
-      <h3>配送设置</h3>
-      <div class="form-group">
-        <label>配送费 (元)</label>
-        <input v-model="form.deliveryFee" type="number" />
+    <template v-else>
+      <div class="settings-card">
+        <h3>基本信息</h3>
+        <div class="form-group">
+          <label>店铺名称</label>
+          <input v-model="form.name" type="text" placeholder="请输入店铺名称" />
+        </div>
+        <div class="form-group">
+          <label>店铺公告</label>
+          <textarea v-model="form.notice" rows="3" placeholder="请输入店铺公告"></textarea>
+        </div>
+        <div class="form-group">
+          <label>联系电话</label>
+          <input v-model="form.phone" type="tel" placeholder="请输入联系电话" />
+        </div>
+        <div class="form-group">
+          <label>营业时间</label>
+          <input v-model="form.businessHours" type="text" placeholder="如: 07:00-21:00" />
+        </div>
+        <div class="form-group">
+          <label>店铺地址</label>
+          <input v-model="form.address" type="text" placeholder="请输入店铺地址" />
+        </div>
       </div>
-      <div class="form-group">
-        <label>起送金额 (元)</label>
-        <input v-model="form.minOrderAmount" type="number" />
+      
+      <div class="settings-card">
+        <h3>配送设置</h3>
+        <div class="form-group">
+          <label>配送费 (元)</label>
+          <input v-model="form.deliveryFee" type="number" min="0" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>起送金额 (元)</label>
+          <input v-model="form.minOrderAmount" type="number" min="0" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>预计配送时间 (分钟)</label>
+          <input v-model="form.deliveryTime" type="number" min="0" />
+        </div>
       </div>
-      <div class="form-group">
-        <label>预计配送时间 (分钟)</label>
-        <input v-model="form.deliveryTime" type="number" />
-      </div>
-    </div>
-    
-    <button class="save-btn" @click="saveSettings">保存设置</button>
+      
+      <button class="save-btn" :disabled="saving" @click="saveSettings">
+        {{ saving ? '保存中...' : '保存设置' }}
+      </button>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getMyMerchantInfo, updateMyMerchantInfo } from '@/api/merchant'
+
+const loading = ref(true)
+const saving = ref(false)
 
 const form = ref({
-  shopName: '美味餐厅',
-  notice: '欢迎光临，新鲜现做，美味又实惠！',
-  phone: '400-123-4567',
-  businessHours: '07:00-21:00',
+  name: '',
+  notice: '',
+  phone: '',
+  businessHours: '',
+  address: '',
   deliveryFee: 0,
-  minOrderAmount: 15,
+  minOrderAmount: 0,
   deliveryTime: 30
 })
 
-const saveSettings = () => {
-  ElMessage.success('设置保存成功')
+const loadSettings = async () => {
+  try {
+    loading.value = true
+    const res = await getMyMerchantInfo()
+    if (res.data) {
+      form.value = {
+        name: res.data.name || '',
+        notice: res.data.notice || '',
+        phone: res.data.phone || '',
+        businessHours: res.data.businessHours || '',
+        address: res.data.address || '',
+        deliveryFee: res.data.deliveryFee || 0,
+        minOrderAmount: res.data.minOrderAmount || 0,
+        deliveryTime: res.data.deliveryTime || 30
+      }
+    }
+  } catch (error) {
+    ElMessage.error('加载店铺信息失败')
+  } finally {
+    loading.value = false
+  }
 }
+
+const saveSettings = async () => {
+  if (!form.value.name) {
+    ElMessage.warning('请输入店铺名称')
+    return
+  }
+  
+  try {
+    saving.value = true
+    await updateMyMerchantInfo(form.value)
+    ElMessage.success('设置保存成功')
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+onMounted(() => {
+  loadSettings()
+})
 </script>
 
 <style scoped>
@@ -71,6 +128,10 @@ const saveSettings = () => {
   font-weight: 600;
   color: #1f1f1f;
   margin: 0 0 24px;
+}
+
+.loading-state {
+  padding: 40px;
 }
 
 .settings-card {
@@ -98,7 +159,7 @@ const saveSettings = () => {
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #595959;
+  color: #333;
   margin-bottom: 8px;
 }
 
@@ -109,34 +170,41 @@ const saveSettings = () => {
   border: 1px solid #d9d9d9;
   border-radius: 8px;
   font-size: 14px;
-  outline: none;
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
+  outline: none;
   border-color: #ff6b35;
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
 }
 
 .form-group textarea {
   resize: vertical;
+  min-height: 80px;
 }
 
 .save-btn {
   width: 100%;
-  padding: 16px;
-  background: #ff6b35;
+  padding: 14px;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.save-btn:hover {
-  background: #e55a2b;
+.save-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
+.save-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 </style>

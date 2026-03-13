@@ -298,24 +298,50 @@ CREATE TABLE biz_merchant_qualification (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商家资质表';
 
 -- =============================================
+-- 13. 优惠券表 (biz_coupon)
+-- =============================================
+DROP TABLE IF EXISTS biz_coupon;
+CREATE TABLE biz_coupon (
+    id BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    name VARCHAR(50) NOT NULL COMMENT '优惠券名称',
+    type TINYINT NOT NULL DEFAULT 1 COMMENT '类型(1满减/2折扣/3免配送费)',
+    min_amount DECIMAL(10,2) DEFAULT 0.00 COMMENT '最低消费金额',
+    discount_amount DECIMAL(10,2) DEFAULT 0.00 COMMENT '优惠金额',
+    discount_rate DECIMAL(3,2) DEFAULT 1.00 COMMENT '折扣率(0.85表示85折)',
+    merchant_id BIGINT DEFAULT NULL COMMENT '指定商家ID(NULL表示通用)',
+    start_time DATETIME NOT NULL COMMENT '开始时间',
+    end_time DATETIME NOT NULL COMMENT '结束时间',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态(0未使用/1已使用/2已过期)',
+    use_time DATETIME DEFAULT NULL COMMENT '使用时间',
+    order_id BIGINT DEFAULT NULL COMMENT '使用订单ID',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (id),
+    KEY idx_user_id (user_id),
+    KEY idx_status (status),
+    KEY idx_end_time (end_time),
+    CONSTRAINT fk_coupon_user FOREIGN KEY (user_id) REFERENCES sys_user(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='优惠券表';
+
+-- =============================================
 -- 初始化数据
 -- =============================================
 
--- 插入管理员账号 (密码: admin123, BCrypt加密)
+-- 插入管理员账号 (密码: admin123, BCrypt加密) - role=1 管理员
 INSERT INTO sys_user (username, password, real_name, phone, email, avatar, role, status) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '系统管理员', '13800000000', 'admin@jswm.com', NULL, 2, 1);
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '系统管理员', '13800000000', 'admin@jswm.com', NULL, 1, 1);
 
--- 插入测试学生账号 (密码: 123456)
+-- 插入测试学生账号 (密码: 123456) - role=0 学生
 INSERT INTO sys_user (username, password, real_name, phone, email, avatar, role, status) VALUES
 ('student1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '张三', '13800000001', 'student1@jswm.com', NULL, 0, 1),
 ('student2', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '李四', '13800000002', 'student2@jswm.com', NULL, 0, 1),
 ('student3', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '王五', '13800000003', 'student3@jswm.com', NULL, 0, 1);
 
--- 插入测试商家账号 (密码: 123456)
+-- 插入测试商家账号 (密码: 123456) - role=2 商家
 INSERT INTO sys_user (username, password, real_name, phone, email, avatar, role, status) VALUES
-('merchant1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '美味餐厅', '13800000010', 'merchant1@jswm.com', NULL, 1, 1),
-('merchant2', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '香喷喷快餐', '13800000011', 'merchant2@jswm.com', NULL, 1, 1),
-('merchant3', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '校园奶茶店', '13800000012', 'merchant3@jswm.com', NULL, 1, 1);
+('merchant1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '美味餐厅', '13800000010', 'merchant1@jswm.com', NULL, 2, 1),
+('merchant2', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '香喷喷快餐', '13800000011', 'merchant2@jswm.com', NULL, 2, 1),
+('merchant3', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '校园奶茶店', '13800000012', 'merchant3@jswm.com', NULL, 2, 1);
 
 -- 插入商家信息
 INSERT INTO biz_merchant (user_id, shop_name, shop_logo, shop_address, description, category, business_hours, rating, sales, status) VALUES

@@ -14,3 +14,26 @@ export const getDishDetail = (id) => {
     method: 'get'
   })
 }
+
+export const addDish = (data) => {
+  return request({
+    url: '/v1/dishes',
+    method: 'post',
+    data
+  })
+}
+
+export const updateDish = (id, data) => {
+  return request({
+    url: `/v1/dishes/${id}`,
+    method: 'put',
+    data
+  })
+}
+
+export const deleteDish = (id) => {
+  return request({
+    url: `/v1/dishes/${id}`,
+    method: 'delete'
+  })
+}

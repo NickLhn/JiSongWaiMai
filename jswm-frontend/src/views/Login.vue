@@ -166,12 +166,15 @@ const handleLogin = async () => {
   try {
     loading.value = true
     const res = await login(loginForm)
-    setToken(res.data.token)
-    setUserInfo(res.data)
+    // res是响应拦截器返回的response.data，所以res.data才是实际用户数据
+    const userData = res.data
+    setToken(userData.token)
+    setUserInfo(userData)
     ElMessage.success('登录成功')
     
     // 根据角色跳转到不同首页
-    const role = res.data.role
+    const role = userData.role
+    console.log('登录成功，用户角色:', role)
     switch(role) {
       case 0: // 学生
         router.push('/home')

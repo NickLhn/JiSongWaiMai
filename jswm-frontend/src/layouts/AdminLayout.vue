@@ -50,11 +50,20 @@
           <el-badge :value="3" class="notification-btn">
             <el-icon :size="20"><Bell /></el-icon>
           </el-badge>
-          <div class="user-dropdown">
-            <el-avatar :size="36" :src="userInfo?.avatar || '/avatar-default.jpg'" />
-            <span class="username">{{ userInfo?.realName || '管理员' }}</span>
-            <el-icon><ArrowDown /></el-icon>
-          </div>
+          <el-dropdown @command="handleCommand">
+            <div class="user-dropdown">
+              <el-avatar :size="36" :src="userInfo?.avatar || '/avatar-default.jpg'" />
+              <span class="username">{{ userInfo?.realName || '管理员' }}</span>
+              <el-icon><ArrowDown /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+                <el-dropdown-item command="settings">系统设置</el-dropdown-item>
+                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </header>
       
@@ -67,11 +76,13 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { getUserInfo } from '@/utils/auth'
+import { useRoute, useRouter } from 'vue-router'
+import { getUserInfo, removeToken, removeUserInfo } from '@/utils/auth'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Management, DataBoard, UserFilled, Shop, List, Tools, Fold, Expand, Search, Bell, ArrowDown } from '@element-plus/icons-vue'
 
 const route = useRoute()
+const router = useRouter()
 const userInfo = ref(getUserInfo())
 const isCollapsed = ref(false)
 
@@ -85,6 +96,33 @@ const pageTitle = computed(() => {
   }
   return titles[route.path] || '管理系统'
 })
+
+const handleCommand = (command) => {
+  switch (command) {
+    case 'profile':
+      router.push('/admin/settings')
+      break
+    case 'settings':
+      router.push('/admin/settings')
+      break
+    case 'logout':
+      handleLogout()
+      break
+  }
+}
+
+const handleLogout = () => {
+  ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    removeToken()
+    removeUserInfo()
+    ElMessage.success('退出成功')
+    router.push('/login')
+  }).catch(() => {})
+}
 </script>
 
 <style scoped>

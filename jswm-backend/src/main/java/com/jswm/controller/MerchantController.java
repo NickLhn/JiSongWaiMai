@@ -3,6 +3,7 @@ package com.jswm.controller;
 import com.jswm.common.Result;
 import com.jswm.entity.BizMerchant;
 import com.jswm.service.MerchantService;
+import com.jswm.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -43,5 +44,34 @@ public class MerchantController {
     public Result<Void> deleteMerchant(@PathVariable Long id) {
         merchantService.deleteMerchant(id);
         return Result.success("删除成功", null);
+    }
+
+    /**
+     * 获取当前登录商家的店铺信息
+     */
+    @GetMapping("/my")
+    public Result<BizMerchant> getMyMerchantInfo(@RequestHeader("Authorization") String token) {
+        Long userId = JwtUtils.getUserId(token);
+        // 根据用户ID查询商家信息
+        BizMerchant merchant = merchantService.getMerchantByUserId(userId);
+        if (merchant == null) {
+            return Result.error("未找到店铺信息");
+        }
+        return Result.success(merchant);
+    }
+
+    /**
+     * 更新当前登录商家的店铺信息
+     */
+    @PutMapping("/my")
+    public Result<Void> updateMyMerchantInfo(@RequestHeader("Authorization") String token,
+                                              @RequestBody BizMerchant merchant) {
+        Long userId = JwtUtils.getUserId(token);
+        BizMerchant existingMerchant = merchantService.getMerchantByUserId(userId);
+        if (existingMerchant == null) {
+            return Result.error("未找到店铺信息");
+        }
+        merchantService.updateMerchant(existingMerchant.getId(), merchant);
+        return Result.success("更新成功", null);
     }
 }

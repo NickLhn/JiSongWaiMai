@@ -58,3 +58,18 @@ export const completeOrder = (id) => {
     method: 'post'
   })
 }
+
+export const confirmOrder = (id) => {
+  return request({
+    url: `/v1/orders/${id}/confirm`,
+    method: 'post'
+  })
+}
+
+export const getOrders = (params) => {
+  return request({
+    url: '/v1/orders',
+    method: 'get',
+    params
+  })
+}
