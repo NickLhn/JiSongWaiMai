@@ -5,24 +5,28 @@
       <div class="header-actions">
         <div class="search-box">
           <el-icon><Search /></el-icon>
-          <input v-model="searchQuery" type="text" placeholder="搜索商家..." />
+          <input v-model="searchQuery" type="text" placeholder="搜索商家..." @input="handleSearch" />
         </div>
-        <button class="add-btn" @click="showAddModal = true">
-          <el-icon><Plus /></el-icon>
-          添加商家
-        </button>
       </div>
     </div>
 
-    <div class="merchants-grid">
-      <div v-for="merchant in filteredMerchants" :key="merchant.id" class="merchant-card">
+    <div v-if="loading" class="loading-state">
+      <el-icon class="loading-icon"><Loading /></el-icon>
+      <span>加载中...</span>
+    </div>
+    <div v-else-if="merchants.length === 0" class="empty-state">
+      <el-icon><Shop /></el-icon>
+      <span>暂无商家数据</span>
+    </div>
+    <div v-else class="merchants-grid">
+      <div v-for="merchant in merchants" :key="merchant.id" class="merchant-card">
         <div class="card-header">
-          <img :src="merchant.logo || '/shop-default.jpg'" class="merchant-logo" />
+          <img :src="merchant.shopLogo || '/shop-default.jpg'" class="merchant-logo" />
           <div class="merchant-basic">
-            <h3>{{ merchant.name }}</h3>
+            <h3>{{ merchant.shopName }}</h3>
             <div class="rating">
-              <el-icon v-for="i in 5" :key="i" :class="{ filled: i <= merchant.rating }"><Star /></el-icon>
-              <span>{{ merchant.rating }}</span>
+              <el-icon v-for="i in 5" :key="i" :class="{ filled: i <= Math.round(merchant.rating || 0) }"><Star /></el-icon>
+              <span>{{ merchant.rating || '暂无评分' }}</span>
             </div>
           </div>
           <span :class="['status-badge', merchant.status === 1 ? 'active' : 'inactive']">
@@ -32,60 +36,228 @@
         <div class="card-body">
           <p class="info-item">
             <el-icon><Location /></el-icon>
-            <span>{{ merchant.address }}</span>
+            <span>{{ merchant.shopAddress || '暂无地址' }}</span>
           </p>
           <p class="info-item">
-            <el-icon><Phone /></el-icon>
-            <span>{{ merchant.phone }}</span>
+            <el-icon><CollectionTag /></el-icon>
+            <span>{{ merchant.category || '暂无分类' }}</span>
           </p>
           <p class="info-item">
             <el-icon><Clock /></el-icon>
-            <span>{{ merchant.businessHours }}</span>
+            <span>{{ merchant.businessHours || '暂无营业时间' }}</span>
           </p>
         </div>
         <div class="card-footer">
           <div class="stats">
-            <span>月售 {{ merchant.monthlySales }}</span>
-            <span>评分 {{ merchant.rating }}</span>
+            <span>销量 {{ merchant.sales || 0 }}</span>
           </div>
           <div class="actions">
-            <button @click="editMerchant(merchant)">编辑</button>
-            <button :class="{ danger: merchant.status === 1 }" @click="toggleStatus(merchant)">
+            <button class="action-btn" @click="editMerchant(merchant)">编辑</button>
+            <button :class="['action-btn', merchant.status === 1 ? 'danger' : 'success']" @click="toggleStatus(merchant)">
               {{ merchant.status === 1 ? '关闭' : '开启' }}
             </button>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 分页 -->
+    <div v-if="merchants.length > 0" class="pagination">
+      <span class="total">共 {{ total }} 条</span>
+      <div class="page-btns">
+        <button :disabled="currentPage === 1" @click="currentPage--">上一页</button>
+        <span class="page-num">{{ currentPage }} / {{ totalPages }}</span>
+        <button :disabled="currentPage === totalPages" @click="currentPage++">下一页</button>
+      </div>
+    </div>
+
+    <!-- 编辑商家弹窗 -->
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑商家"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="editFormRef"
+        :model="editForm"
+        :rules="editRules"
+        label-width="100px"
+        class="edit-form"
+      >
+        <el-form-item label="店铺名称" prop="shopName">
+          <el-input v-model="editForm.shopName" placeholder="请输入店铺名称" />
+        </el-form-item>
+        <el-form-item label="店铺地址" prop="shopAddress">
+          <el-input v-model="editForm.shopAddress" placeholder="请输入店铺地址" />
+        </el-form-item>
+        <el-form-item label="经营品类" prop="category">
+          <el-input v-model="editForm.category" placeholder="请输入经营品类" />
+        </el-form-item>
+        <el-form-item label="营业时间" prop="businessHours">
+          <el-input v-model="editForm.businessHours" placeholder="如：09:00-22:00" />
+        </el-form-item>
+        <el-form-item label="店铺简介" prop="description">
+          <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="请输入店铺简介" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="editForm.status">
+            <el-radio :label="1">营业中</el-radio>
+            <el-radio :label="0">已关闭</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="editDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="editLoading" @click="handleSaveEdit">保存</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { Search, Plus, Star, Location, Phone, Clock } from '@element-plus/icons-vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { Search, Star, Location, Clock, CollectionTag, Loading, Shop } from '@element-plus/icons-vue'
+import { getMerchantList, updateMerchant, updateMerchantStatus } from '@/api/adminMerchant'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const searchQuery = ref('')
-const showAddModal = ref(false)
+const currentPage = ref(1)
+const pageSize = 10
+const total = ref(0)
+const merchants = ref([])
+const loading = ref(false)
 
-const merchants = ref([
-  { id: 1, name: '美味餐厅', rating: 4.8, status: 1, address: '校园东区食堂1楼', phone: '400-123-4567', businessHours: '07:00-21:00', monthlySales: 1256, logo: '/shop1.jpg' },
-  { id: 2, name: '快乐汉堡', rating: 4.5, status: 1, address: '校园西区食堂2楼', phone: '400-123-4568', businessHours: '09:00-22:00', monthlySales: 892, logo: '/shop2.jpg' },
-  { id: 3, name: '鲜果时光', rating: 4.9, status: 0, address: '校园北区商业街', phone: '400-123-4569', businessHours: '08:00-20:00', monthlySales: 567, logo: '/shop3.jpg' },
-  { id: 4, name: '川味小厨', rating: 4.6, status: 1, address: '校园南区食堂3楼', phone: '400-123-4570', businessHours: '10:00-21:00', monthlySales: 723, logo: '/shop4.jpg' }
-])
-
-const filteredMerchants = computed(() => {
-  if (!searchQuery.value) return merchants.value
-  return merchants.value.filter(m => m.name.includes(searchQuery.value))
+// 编辑弹窗相关
+const editDialogVisible = ref(false)
+const editLoading = ref(false)
+const editFormRef = ref(null)
+const editForm = ref({
+  id: null,
+  shopName: '',
+  shopAddress: '',
+  category: '',
+  businessHours: '',
+  description: '',
+  status: 1
 })
 
-const editMerchant = (merchant) => {
-  console.log('编辑商家:', merchant)
+const editRules = {
+  shopName: [
+    { required: true, message: '请输入店铺名称', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  shopAddress: [
+    { required: true, message: '请输入店铺地址', trigger: 'blur' }
+  ]
 }
 
-const toggleStatus = (merchant) => {
-  merchant.status = merchant.status === 1 ? 0 : 1
+// 加载商家列表
+const loadMerchants = async () => {
+  try {
+    loading.value = true
+    const res = await getMerchantList({
+      keyword: searchQuery.value,
+      page: currentPage.value,
+      pageSize: pageSize
+    })
+    const data = res.data
+    merchants.value = data.list || []
+    total.value = data.total || 0
+  } catch (error) {
+    ElMessage.error('加载商家列表失败')
+  } finally {
+    loading.value = false
+  }
 }
+
+// 搜索防抖
+let searchTimeout
+const handleSearch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    loadMerchants()
+  }, 300)
+}
+
+// 监听页码变化
+watch(currentPage, loadMerchants)
+
+const totalPages = computed(() => Math.ceil(total.value / pageSize))
+
+const editMerchant = (merchant) => {
+  editForm.value = {
+    id: merchant.id,
+    shopName: merchant.shopName,
+    shopAddress: merchant.shopAddress || '',
+    category: merchant.category || '',
+    businessHours: merchant.businessHours || '',
+    description: merchant.description || '',
+    status: merchant.status
+  }
+  editDialogVisible.value = true
+}
+
+const handleSaveEdit = async () => {
+  if (!editFormRef.value) return
+  
+  try {
+    await editFormRef.value.validate()
+    editLoading.value = true
+    
+    await updateMerchant(editForm.value.id, {
+      shopName: editForm.value.shopName,
+      shopAddress: editForm.value.shopAddress,
+      category: editForm.value.category,
+      businessHours: editForm.value.businessHours,
+      description: editForm.value.description,
+      status: editForm.value.status
+    })
+    
+    ElMessage.success('保存成功')
+    editDialogVisible.value = false
+    loadMerchants()
+  } catch (error) {
+    if (error !== 'validation') {
+      ElMessage.error('保存失败')
+    }
+  } finally {
+    editLoading.value = false
+  }
+}
+
+const toggleStatus = async (merchant) => {
+  try {
+    const newStatus = merchant.status === 1 ? 0 : 1
+    const actionText = newStatus === 1 ? '开启' : '关闭'
+    
+    await ElMessageBox.confirm(
+      `确定要${actionText}商家 "${merchant.shopName}" 吗？`,
+      '确认操作',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    await updateMerchantStatus(merchant.id, newStatus)
+    merchant.status = newStatus
+    ElMessage.success(`${actionText}成功`)
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('操作失败')
+    }
+  }
+}
+
+// 页面加载时获取数据
+onMounted(() => {
+  loadMerchants()
+})
 </script>
 
 <style scoped>
@@ -131,23 +303,30 @@ const toggleStatus = (merchant) => {
   background: transparent;
 }
 
-.add-btn {
+.loading-state,
+.empty-state {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  background: #ff6b35;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+  justify-content: center;
+  padding: 80px 24px;
+  color: #8c8c8c;
+  gap: 12px;
 }
 
-.add-btn:hover {
-  background: #e55a2b;
+.loading-state .el-icon {
+  font-size: 32px;
+  animation: rotate 1s linear infinite;
+}
+
+.empty-state .el-icon {
+  font-size: 48px;
+  color: #d9d9d9;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .merchants-grid {
@@ -198,13 +377,21 @@ const toggleStatus = (merchant) => {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #ffc107;
+}
+
+.rating .el-icon {
   font-size: 14px;
+  color: #d9d9d9;
+}
+
+.rating .el-icon.filled {
+  color: #ffc53d;
 }
 
 .rating span {
   margin-left: 4px;
-  color: #595959;
+  font-size: 14px;
+  color: #8c8c8c;
 }
 
 .status-badge {
@@ -232,13 +419,14 @@ const toggleStatus = (merchant) => {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 8px;
-  font-size: 13px;
+  margin: 8px 0;
+  font-size: 14px;
   color: #595959;
 }
 
-.info-item:last-child {
-  margin-bottom: 0;
+.info-item .el-icon {
+  font-size: 16px;
+  color: #8c8c8c;
 }
 
 .card-footer {
@@ -250,9 +438,7 @@ const toggleStatus = (merchant) => {
 }
 
 .stats {
-  display: flex;
-  gap: 16px;
-  font-size: 13px;
+  font-size: 14px;
   color: #8c8c8c;
 }
 
@@ -261,7 +447,7 @@ const toggleStatus = (merchant) => {
   gap: 8px;
 }
 
-.actions button {
+.action-btn {
   padding: 6px 12px;
   border: 1px solid #d9d9d9;
   background: white;
@@ -271,13 +457,84 @@ const toggleStatus = (merchant) => {
   transition: all 0.2s;
 }
 
-.actions button:hover {
+.action-btn:hover {
   border-color: #ff6b35;
   color: #ff6b35;
 }
 
-.actions button.danger:hover {
+.action-btn.danger {
   border-color: #ff4d4f;
   color: #ff4d4f;
+}
+
+.action-btn.danger:hover {
+  background: #ff4d4f;
+  color: white;
+}
+
+.action-btn.success {
+  border-color: #52c41a;
+  color: #52c41a;
+}
+
+.action-btn.success:hover {
+  background: #52c41a;
+  color: white;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding: 16px 24px;
+  background: white;
+  border-radius: 12px;
+}
+
+.total {
+  font-size: 14px;
+  color: #8c8c8c;
+}
+
+.page-btns {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-btns button {
+  padding: 8px 16px;
+  border: 1px solid #d9d9d9;
+  background: white;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-btns button:hover:not(:disabled) {
+  border-color: #ff6b35;
+  color: #ff6b35;
+}
+
+.page-btns button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-num {
+  font-size: 14px;
+  color: #595959;
+}
+
+.edit-form {
+  padding: 20px 0;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>
