@@ -100,6 +100,11 @@ const studentRoutes = {
       path: 'settings',
       name: 'StudentSettings',
       component: () => import('@/views/student/Settings.vue')
+    },
+    {
+      path: 'review/create',
+      name: 'StudentReviewCreate',
+      component: () => import('@/views/student/ReviewCreate.vue')
     }
   ]
 }
@@ -108,7 +113,7 @@ const studentRoutes = {
 const merchantRoutes = {
   path: '/merchant',
   component: () => import('@/layouts/MerchantLayout.vue'),
-  meta: { requiresAuth: true, role: 2 },
+  meta: { requiresAuth: true, role: 1 },
   redirect: '/merchant/dashboard',
   children: [
     {
@@ -138,7 +143,7 @@ const merchantRoutes = {
 const adminRoutes = {
   path: '/admin',
   component: () => import('@/layouts/AdminLayout.vue'),
-  meta: { requiresAuth: true, role: 1 },
+  meta: { requiresAuth: true, role: 2 },
   redirect: '/admin/dashboard',
   children: [
     {
@@ -223,10 +228,10 @@ function redirectByRole(role, next) {
   switch(role) {
     case 0: // 学生
       return next('/home')
-    case 1: // 管理员
-      return next('/admin/dashboard')
-    case 2: // 商家
+    case 1: // 商家
       return next('/merchant/dashboard')
+    case 2: // 管理员
+      return next('/admin/dashboard')
     default:
       removeToken()
       removeUserInfo()
