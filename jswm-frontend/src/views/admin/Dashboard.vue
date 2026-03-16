@@ -99,37 +99,67 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { User, Shop, ShoppingCart, Money, Bell } from '@element-plus/icons-vue'
+import { getAdminDashboard } from '@/api/adminDashboard'
+import { ElMessage } from 'element-plus'
+
+const loading = ref(false)
 
 const stats = ref({
-  totalUsers: 1256,
-  totalMerchants: 48,
-  totalOrders: 8934,
-  totalRevenue: 156789
+  totalUsers: 0,
+  totalMerchants: 0,
+  totalOrders: 0,
+  totalRevenue: 0
 })
 
 const timeRange = ref('week')
-const orderTrend = ref([30, 45, 35, 50, 65, 55, 70])
+const orderTrend = ref([0, 0, 0, 0, 0, 0, 0])
+const orderTrendLabels = ref(['', '', '', '', '', '', ''])
 
-const categoryStats = ref([
-  { name: '中式快餐', count: 18, percentage: 38 },
-  { name: '西式快餐', count: 12, percentage: 25 },
-  { name: '饮品甜点', count: 10, percentage: 21 },
-  { name: '其他', count: 8, percentage: 16 }
-])
+const categoryStats = ref([])
 
-const recentActivities = ref([
-  { type: 'user', text: '新用户 张三 注册成功', time: '5分钟前' },
-  { type: 'merchant', text: '商家 美味餐厅 入驻申请已通过', time: '15分钟前' },
-  { type: 'order', text: '新订单 ORD202603120015 已支付', time: '30分钟前' },
-  { type: 'user', text: '用户 李四 完成实名认证', time: '1小时前' },
-  { type: 'order', text: '订单 ORD202603120008 已完成', time: '2小时前' }
-])
+const recentActivities = ref([])
 
 const getLinePoints = (data) => {
   return data.map((val, idx) => `${idx * 14 + 7},${100 - val}`).join(' ')
 }
+
+// 加载看板数据
+const loadDashboardData = async () => {
+  try {
+    loading.value = true
+    const res = await getAdminDashboard()
+    const data = res.data
+
+    // 统计数据
+    stats.value.totalUsers = data.totalUsers || 0
+    stats.value.totalMerchants = data.totalMerchants || 0
+    stats.value.totalOrders = data.totalOrders || 0
+    stats.value.totalRevenue = data.totalRevenue || 0
+
+    // 订单趋势
+    if (data.orderTrend && data.orderTrend.length > 0) {
+      orderTrend.value = data.orderTrend.map(item => item.count)
+      orderTrendLabels.value = data.orderTrend.map(item => item.date)
+    }
+
+    // 商家分类统计
+    categoryStats.value = data.categoryStats || []
+
+    // 最近活动
+    recentActivities.value = data.recentActivities || []
+  } catch (error) {
+    ElMessage.error('加载数据失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 页面加载时获取数据
+onMounted(() => {
+  loadDashboardData()
+})
 </script>
 
 <style scoped>

@@ -38,6 +38,13 @@
         WHERE phone = #{phone} AND is_deleted = 0
     </select>
 
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_user
+        WHERE is_deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
     <insert id="insert" parameterType="com.jswm.entity.SysUser" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO sys_user (username, password, real_name, phone, email, avatar, role, status)
         VALUES (#{username}, #{password}, #{realName}, #{phone}, #{email}, #{avatar}, #{role}, #{status})
