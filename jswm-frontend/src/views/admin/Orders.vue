@@ -5,18 +5,26 @@
       <div class="header-actions">
         <div class="search-box">
           <el-icon><Search /></el-icon>
-          <input v-model="searchQuery" type="text" placeholder="搜索订单号..." />
+          <input v-model="searchQuery" type="text" placeholder="搜索订单号..." @input="handleSearch" />
         </div>
         <div class="filter-tabs">
-          <button :class="{ active: activeTab === 'all' }" @click="activeTab = 'all'">全部</button>
-          <button :class="{ active: activeTab === 'pending' }" @click="activeTab = 'pending'">待处理</button>
-          <button :class="{ active: activeTab === 'processing' }" @click="activeTab = 'processing'">进行中</button>
-          <button :class="{ active: activeTab === 'completed' }" @click="activeTab = 'completed'">已完成</button>
+          <button :class="{ active: activeTab === 'all' }" @click="changeTab('all')">全部</button>
+          <button :class="{ active: activeTab === 'pending' }" @click="changeTab('pending')">待处理</button>
+          <button :class="{ active: activeTab === 'processing' }" @click="changeTab('processing')">进行中</button>
+          <button :class="{ active: activeTab === 'completed' }" @click="changeTab('completed')">已完成</button>
         </div>
       </div>
     </div>
 
-    <div class="orders-table">
+    <div v-if="loading" class="loading-state">
+      <el-icon class="loading-icon"><Loading /></el-icon>
+      <span>加载中...</span>
+    </div>
+    <div v-else-if="orders.length === 0" class="empty-state">
+      <el-icon><Document /></el-icon>
+      <span>暂无订单数据</span>
+    </div>
+    <div v-else class="orders-table">
       <div class="table-header">
         <span>订单号</span>
         <span>用户信息</span>
@@ -27,7 +35,7 @@
         <span>操作</span>
       </div>
       <div class="table-body">
-        <div v-for="order in filteredOrders" :key="order.id" class="table-row">
+        <div v-for="order in orders" :key="order.id" class="table-row">
           <span class="order-no">{{ order.orderNo }}</span>
           <div class="user-cell">
             <span class="name">{{ order.userName }}</span>
@@ -36,16 +44,17 @@
           <span class="merchant">{{ order.merchantName }}</span>
           <span class="amount">¥{{ order.amount }}</span>
           <span :class="['status', getStatusClass(order.status)]">{{ getStatusText(order.status) }}</span>
-          <span class="time">{{ order.createTime }}</span>
+          <span class="time">{{ formatTime(order.createTime) }}</span>
           <div class="actions">
-            <button @click="viewDetail(order)">详情</button>
-            <button v-if="order.status === 1" class="primary" @click="cancelOrder(order)">取消</button>
+            <button class="action-btn" @click="viewDetail(order)">详情</button>
+            <button v-if="order.status === 1" class="action-btn danger" @click="cancelOrder(order)">取消</button>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="pagination">
+    <!-- 分页 -->
+    <div v-if="orders.length > 0" class="pagination">
       <span class="total">共 {{ total }} 条</span>
       <div class="page-btns">
         <button :disabled="currentPage === 1" @click="currentPage--">上一页</button>
@@ -53,60 +62,251 @@
         <button :disabled="currentPage === totalPages" @click="currentPage++">下一页</button>
       </div>
     </div>
+
+    <!-- 订单详情弹窗 -->
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="订单详情"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <div v-if="currentOrder" class="order-detail">
+        <div class="detail-section">
+          <h4>订单信息</h4>
+          <div class="detail-row">
+            <span class="label">订单号：</span>
+            <span class="value">{{ currentOrder.orderNo }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">订单状态：</span>
+            <span :class="['status-tag', getStatusClass(currentOrder.status)]">{{ getStatusText(currentOrder.status) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">下单时间：</span>
+            <span class="value">{{ formatTime(currentOrder.createTime) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">订单金额：</span>
+            <span class="value amount">¥{{ currentOrder.amount }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4>用户信息</h4>
+          <div class="detail-row">
+            <span class="label">收货人：</span>
+            <span class="value">{{ currentOrder.receiverName || currentOrder.userName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">联系电话：</span>
+            <span class="value">{{ currentOrder.receiverPhone || currentOrder.userPhone }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">配送地址：</span>
+            <span class="value">{{ currentOrder.deliveryAddress || '-' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4>商家信息</h4>
+          <div class="detail-row">
+            <span class="label">商家名称：</span>
+            <span class="value">{{ currentOrder.merchantName }}</span>
+          </div>
+        </div>
+
+        <div v-if="currentOrder.remark" class="detail-section">
+          <h4>订单备注</h4>
+          <div class="detail-row">
+            <span class="value">{{ currentOrder.remark }}</span>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="detailDialogVisible = false">关闭</el-button>
+          <el-button v-if="currentOrder && currentOrder.status === 1" type="primary" @click="handleAcceptOrder">接单</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 取消订单弹窗 -->
+    <el-dialog
+      v-model="cancelDialogVisible"
+      title="取消订单"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <el-form :model="cancelForm" label-width="80px">
+        <el-form-item label="取消原因">
+          <el-input v-model="cancelForm.reason" type="textarea" :rows="3" placeholder="请输入取消原因" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="cancelDialogVisible = false">取消</el-button>
+          <el-button type="danger" :loading="cancelLoading" @click="handleConfirmCancel">确认取消</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { Search } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, onMounted, watch } from 'vue'
+import { Search, Loading, Document } from '@element-plus/icons-vue'
+import { getOrderList, updateOrderStatus, cancelOrder } from '@/api/adminOrder'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const searchQuery = ref('')
 const activeTab = ref('all')
 const currentPage = ref(1)
 const pageSize = 10
-const total = ref(8934)
+const total = ref(0)
+const orders = ref([])
+const loading = ref(false)
 
-const orders = ref([
-  { id: 1, orderNo: 'ORD202603120001', userName: '张三', userPhone: '13800138001', merchantName: '美味餐厅', amount: 35, status: 1, createTime: '2024-03-12 10:30' },
-  { id: 2, orderNo: 'ORD202603120002', userName: '李四', userPhone: '13800138002', merchantName: '快乐汉堡', amount: 28, status: 2, createTime: '2024-03-12 10:25' },
-  { id: 3, orderNo: 'ORD202603120003', userName: '王五', userPhone: '13800138003', merchantName: '鲜果时光', amount: 45, status: 3, createTime: '2024-03-12 10:20' },
-  { id: 4, orderNo: 'ORD202603120004', userName: '赵六', userPhone: '13800138004', merchantName: '川味小厨', amount: 52, status: 4, createTime: '2024-03-12 10:15' },
-  { id: 5, orderNo: 'ORD202603120005', userName: '钱七', userPhone: '13800138005', merchantName: '美味餐厅', amount: 18, status: 1, createTime: '2024-03-12 10:10' }
-])
+// 详情弹窗
+const detailDialogVisible = ref(false)
+const currentOrder = ref(null)
 
-const filteredOrders = computed(() => {
-  let result = orders.value
-  if (activeTab.value !== 'all') {
-    const statusMap = { pending: 1, processing: 2, completed: 4 }
-    result = result.filter(o => o.status === statusMap[activeTab.value] || (activeTab.value === 'processing' && o.status === 3))
-  }
-  if (searchQuery.value) {
-    result = result.filter(o => o.orderNo.includes(searchQuery.value))
-  }
-  return result
+// 取消弹窗
+const cancelDialogVisible = ref(false)
+const cancelLoading = ref(false)
+const cancelForm = ref({
+  orderId: null,
+  reason: ''
 })
+
+// 状态映射
+const statusMap = {
+  1: { text: '待接单', class: 'pending', tab: 'pending' },
+  2: { text: '制作中', class: 'processing', tab: 'processing' },
+  3: { text: '配送中', class: 'delivering', tab: 'processing' },
+  4: { text: '已完成', class: 'completed', tab: 'completed' },
+  5: { text: '已取消', class: 'cancelled', tab: 'completed' }
+}
+
+// 加载订单列表
+const loadOrders = async () => {
+  try {
+    loading.value = true
+    
+    // 根据当前tab确定状态
+    let status = null
+    if (activeTab.value === 'pending') status = 1
+    else if (activeTab.value === 'processing') status = null // 2和3
+    else if (activeTab.value === 'completed') status = null // 4和5
+    
+    const res = await getOrderList({
+      keyword: searchQuery.value,
+      status: status,
+      page: currentPage.value,
+      pageSize: pageSize
+    })
+    
+    let list = res.data.list || []
+    
+    // 前端过滤processing和completed
+    if (activeTab.value === 'processing') {
+      list = list.filter(o => o.status === 2 || o.status === 3)
+    } else if (activeTab.value === 'completed') {
+      list = list.filter(o => o.status === 4 || o.status === 5)
+    }
+    
+    orders.value = list
+    total.value = res.data.total || 0
+  } catch (error) {
+    ElMessage.error('加载订单列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 搜索防抖
+let searchTimeout
+const handleSearch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    loadOrders()
+  }, 300)
+}
+
+// 切换标签
+const changeTab = (tab) => {
+  activeTab.value = tab
+  currentPage.value = 1
+  loadOrders()
+}
+
+// 监听页码变化
+watch(currentPage, loadOrders)
 
 const totalPages = computed(() => Math.ceil(total.value / pageSize))
 
 const getStatusClass = (status) => {
-  const map = { 1: 'pending', 2: 'processing', 3: 'delivering', 4: 'completed', 5: 'cancelled' }
-  return map[status] || ''
+  return statusMap[status]?.class || ''
 }
 
 const getStatusText = (status) => {
-  const map = { 1: '待接单', 2: '制作中', 3: '配送中', 4: '已完成', 5: '已取消' }
-  return map[status] || '未知'
+  return statusMap[status]?.text || '未知'
+}
+
+const formatTime = (time) => {
+  if (!time) return '-'
+  if (typeof time === 'string') {
+    return time.replace('T', ' ').substring(0, 16)
+  }
+  return time
 }
 
 const viewDetail = (order) => {
-  console.log('查看订单:', order)
+  currentOrder.value = order
+  detailDialogVisible.value = true
+}
+
+const handleAcceptOrder = async () => {
+  try {
+    await updateOrderStatus(currentOrder.value.id, 2) // 制作中
+    ElMessage.success('接单成功')
+    currentOrder.value.status = 2
+    detailDialogVisible.value = false
+    loadOrders()
+  } catch (error) {
+    ElMessage.error('接单失败')
+  }
 }
 
 const cancelOrder = (order) => {
-  order.status = 5
-  ElMessage.success('订单已取消')
+  cancelForm.value.orderId = order.id
+  cancelForm.value.reason = ''
+  cancelDialogVisible.value = true
 }
+
+const handleConfirmCancel = async () => {
+  if (!cancelForm.value.reason.trim()) {
+    ElMessage.warning('请输入取消原因')
+    return
+  }
+  
+  try {
+    cancelLoading.value = true
+    await cancelOrder(cancelForm.value.orderId, cancelForm.value.reason)
+    ElMessage.success('订单已取消')
+    cancelDialogVisible.value = false
+    loadOrders()
+  } catch (error) {
+    ElMessage.error('取消失败')
+  } finally {
+    cancelLoading.value = false
+  }
+}
+
+// 页面加载时获取数据
+onMounted(() => {
+  loadOrders()
+})
 </script>
 
 <style scoped>
@@ -174,6 +374,32 @@ const cancelOrder = (order) => {
   border-color: #ff6b35;
 }
 
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  color: #8c8c8c;
+  gap: 12px;
+}
+
+.loading-state .el-icon {
+  font-size: 32px;
+  animation: rotate 1s linear infinite;
+}
+
+.empty-state .el-icon {
+  font-size: 48px;
+  color: #d9d9d9;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .orders-table {
   background: white;
   border-radius: 16px;
@@ -210,6 +436,7 @@ const cancelOrder = (order) => {
 .order-no {
   font-family: monospace;
   color: #1f1f1f;
+  font-weight: 500;
 }
 
 .user-cell {
@@ -228,6 +455,10 @@ const cancelOrder = (order) => {
   color: #8c8c8c;
 }
 
+.merchant {
+  color: #1f1f1f;
+}
+
 .amount {
   font-weight: 600;
   color: #ff6b35;
@@ -241,18 +472,41 @@ const cancelOrder = (order) => {
   width: fit-content;
 }
 
-.status.pending { background: #fff7e6; color: #fa8c16; }
-.status.processing { background: #e6f7ff; color: #1890ff; }
-.status.delivering { background: #f9f0ff; color: #722ed1; }
-.status.completed { background: #f6ffed; color: #52c41a; }
-.status.cancelled { background: #fff1f0; color: #ff4d4f; }
+.status.pending {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.status.processing {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.status.delivering {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status.completed {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status.cancelled {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+.time {
+  color: #8c8c8c;
+}
 
 .actions {
   display: flex;
   gap: 8px;
 }
 
-.actions button {
+.action-btn {
   padding: 6px 12px;
   border: 1px solid #d9d9d9;
   background: white;
@@ -262,19 +516,19 @@ const cancelOrder = (order) => {
   transition: all 0.2s;
 }
 
-.actions button:hover {
+.action-btn:hover {
   border-color: #ff6b35;
   color: #ff6b35;
 }
 
-.actions button.primary {
-  background: #ff6b35;
-  color: white;
-  border-color: #ff6b35;
+.action-btn.danger {
+  border-color: #ff4d4f;
+  color: #ff4d4f;
 }
 
-.actions button.primary:hover {
-  background: #e55a2b;
+.action-btn.danger:hover {
+  background: #ff4d4f;
+  color: white;
 }
 
 .pagination {
@@ -321,5 +575,83 @@ const cancelOrder = (order) => {
 .page-num {
   font-size: 14px;
   color: #595959;
+}
+
+.order-detail {
+  padding: 20px 0;
+}
+
+.detail-section {
+  margin-bottom: 24px;
+}
+
+.detail-section h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f1f1f;
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row {
+  display: flex;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.detail-row .label {
+  width: 100px;
+  color: #8c8c8c;
+  flex-shrink: 0;
+}
+
+.detail-row .value {
+  flex: 1;
+  color: #1f1f1f;
+}
+
+.detail-row .value.amount {
+  font-weight: 600;
+  color: #ff6b35;
+  font-size: 18px;
+}
+
+.status-tag {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-tag.pending {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.status-tag.processing {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.status-tag.delivering {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status-tag.completed {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status-tag.cancelled {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>
