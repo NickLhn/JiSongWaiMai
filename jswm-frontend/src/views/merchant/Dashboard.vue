@@ -61,7 +61,7 @@
             </div>
           </div>
           <div class="x-labels">
-            <span v-for="day in ['周一', '周二', '周三', '周四', '周五', '周六', '周日']" :key="day">{{ day }}</span>
+            <span v-for="(label, index) in salesLabels" :key="index">{{ label }}</span>
           </div>
         </div>
       </div>
@@ -126,8 +126,8 @@
             <span class="amount">¥{{ order.amount }}</span>
             <span :class="['status', getStatusClass(order.status)]">{{ getStatusText(order.status) }}</span>
             <div class="actions">
-              <button v-if="order.status === 1" class="action-btn primary" @click="acceptOrder(order.id)">接单</button>
-              <button v-if="order.status === 2" class="action-btn primary" @click="deliverOrder(order.id)">配送</button>
+              <button v-if="order.status === 1" class="action-btn primary" @click="handleAcceptOrder(order.id)">接单</button>
+              <button v-if="order.status === 2" class="action-btn primary" @click="handleDeliverOrder(order.id)">配送</button>
               <button class="action-btn" @click="viewDetail(order.id)">详情</button>
             </div>
           </div>
@@ -138,37 +138,73 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Money, ShoppingBag, User, Star } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { getMerchantDashboard } from '@/api/dashboard'
+import { acceptOrder, deliverOrder } from '@/api/order'
 
 const router = useRouter()
+const loading = ref(false)
 
 // Stats
-const todaySales = ref(2580)
-const todayOrders = ref(42)
-const newCustomers = ref(18)
+const todaySales = ref(0)
+const todayOrders = ref(0)
+const newCustomers = ref(0)
 const rating = ref(4.8)
 
 // Sales Chart
 const salesRange = ref('week')
-const salesData = ref([45, 60, 75, 50, 85, 90, 70])
+const salesData = ref([0, 0, 0, 0, 0, 0, 0])
+const salesLabels = ref(['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
 
 // Order Status
-const pendingOrders = ref(5)
-const processingOrders = ref(3)
-const deliveringOrders = ref(2)
-const completedOrders = ref(156)
+const pendingOrders = ref(0)
+const processingOrders = ref(0)
+const deliveringOrders = ref(0)
+const completedOrders = ref(0)
 
 // Recent Orders
-const recentOrders = ref([
-  { id: 1, orderNo: 'ORD202603120001', customerName: '张三', items: '红烧肉盖饭等2件', amount: 35, status: 1 },
-  { id: 2, orderNo: 'ORD202603120002', customerName: '李四', items: '宫保鸡丁饭', amount: 18, status: 2 },
-  { id: 3, orderNo: 'ORD202603120003', customerName: '王五', items: '番茄鸡蛋面等3件', amount: 42, status: 1 },
-  { id: 4, orderNo: 'ORD202603120004', customerName: '赵六', items: '炸鸡腿', amount: 12, status: 3 },
-  { id: 5, orderNo: 'ORD202603120005', customerName: '钱七', items: '红烧肉盖饭', amount: 20, status: 4 }
-])
+const recentOrders = ref([])
+
+// 加载看板数据
+const loadDashboardData = async () => {
+  try {
+    loading.value = true
+    const res = await getMerchantDashboard()
+    const data = res.data
+    
+    // 统计数据
+    todaySales.value = data.todaySales || 0
+    todayOrders.value = data.todayOrders || 0
+    newCustomers.value = data.newCustomers || 0
+    rating.value = data.rating || 4.8
+    
+    // 订单状态
+    pendingOrders.value = data.pendingOrders || 0
+    processingOrders.value = data.processingOrders || 0
+    deliveringOrders.value = data.deliveringOrders || 0
+    completedOrders.value = data.completedOrders || 0
+    
+    // 销售趋势
+    if (data.salesTrend && data.salesTrend.length > 0) {
+      salesData.value = data.salesTrend.map(item => {
+        // 将金额转换为百分比高度（假设最大值为500）
+        const amount = parseFloat(item.amount) || 0
+        return Math.min((amount / 500) * 100, 100)
+      })
+      salesLabels.value = data.salesTrend.map(item => item.date)
+    }
+    
+    // 最新订单
+    recentOrders.value = data.recentOrders || []
+  } catch (error) {
+    ElMessage.error('加载数据失败')
+  } finally {
+    loading.value = false
+  }
+}
 
 const getStatusClass = (status) => {
   const map = { 1: 'pending', 2: 'processing', 3: 'delivering', 4: 'completed' }
@@ -180,13 +216,30 @@ const getStatusText = (status) => {
   return map[status] || '未知'
 }
 
-const acceptOrder = (id) => {
-  ElMessage.success('已接单')
+const handleAcceptOrder = async (id) => {
+  try {
+    await acceptOrder(id)
+    ElMessage.success('已接单')
+    loadDashboardData() // 刷新数据
+  } catch (error) {
+    ElMessage.error('接单失败')
+  }
 }
 
-const deliverOrder = (id) => {
-  ElMessage.success('开始配送')
+const handleDeliverOrder = async (id) => {
+  try {
+    await deliverOrder(id)
+    ElMessage.success('开始配送')
+    loadDashboardData() // 刷新数据
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
 }
+
+// 页面加载时获取数据
+onMounted(() => {
+  loadDashboardData()
+})
 
 const viewDetail = (id) => {
   router.push(`/merchant/orders?id=${id}`)
