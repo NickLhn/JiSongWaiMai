@@ -60,49 +60,108 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Search, Filter } from '@element-plus/icons-vue'
+import { getUserList, updateUserStatus } from '@/api/adminUser'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = 10
-const total = ref(125)
+const total = ref(0)
+const users = ref([])
+const loading = ref(false)
 
-const users = ref([
-  { id: 1, name: '张三', email: 'zhangsan@example.com', phone: '13800138001', role: 0, status: 1, avatar: '/avatar1.jpg', createTime: '2024-03-01' },
-  { id: 2, name: '李四', email: 'lisi@example.com', phone: '13800138002', role: 0, status: 1, avatar: '/avatar2.jpg', createTime: '2024-03-02' },
-  { id: 3, name: '王五', email: 'wangwu@example.com', phone: '13800138003', role: 2, status: 1, avatar: '/avatar3.jpg', createTime: '2024-03-03' },
-  { id: 4, name: '赵六', email: 'zhaoliu@example.com', phone: '13800138004', role: 0, status: 0, avatar: '/avatar4.jpg', createTime: '2024-03-04' },
-  { id: 5, name: '钱七', email: 'qianqi@example.com', phone: '13800138005', role: 0, status: 1, avatar: '/avatar5.jpg', createTime: '2024-03-05' }
-])
+// 加载用户列表
+const loadUsers = async () => {
+  try {
+    loading.value = true
+    const res = await getUserList({
+      keyword: searchQuery.value,
+      page: currentPage.value,
+      pageSize: pageSize
+    })
+    const data = res.data
+    users.value = (data.list || []).map(u => ({
+      id: u.id,
+      name: u.realName || u.username,
+      email: u.email || '-',
+      phone: u.phone || '-',
+      role: u.role,
+      status: u.status,
+      avatar: u.avatar,
+      createTime: u.createTime ? u.createTime.substring(0, 10) : '-'
+    }))
+    total.value = data.total || 0
+  } catch (error) {
+    ElMessage.error('加载用户列表失败')
+  } finally {
+    loading.value = false
+  }
+}
 
-const filteredUsers = computed(() => {
-  if (!searchQuery.value) return users.value
-  return users.value.filter(u => 
-    u.name.includes(searchQuery.value) || 
-    u.phone.includes(searchQuery.value)
-  )
-})
+// 搜索防抖
+let searchTimeout
+const handleSearch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    loadUsers()
+  }, 300)
+}
+
+// 监听搜索关键词变化
+watch(searchQuery, handleSearch)
+
+// 监听页码变化
+watch(currentPage, loadUsers)
 
 const totalPages = computed(() => Math.ceil(total.value / pageSize))
 
 const getRoleText = (role) => {
-  const map = { 0: '学生', 1: '管理员', 2: '商家' }
+  const map = { 0: '学生', 1: '商家', 2: '管理员' }
   return map[role] || '未知'
 }
 
 const getRoleClass = (role) => {
-  const map = { 0: 'student', 1: 'admin', 2: 'merchant' }
+  const map = { 0: 'student', 1: 'merchant', 2: 'admin' }
   return map[role] || ''
 }
 
 const editUser = (user) => {
   console.log('编辑用户:', user)
+  ElMessage.info('编辑功能开发中')
 }
 
-const toggleStatus = (user) => {
-  user.status = user.status === 1 ? 0 : 1
+const toggleStatus = async (user) => {
+  try {
+    const newStatus = user.status === 1 ? 0 : 1
+    const actionText = newStatus === 1 ? '启用' : '禁用'
+    
+    await ElMessageBox.confirm(
+      `确定要${actionText}用户 "${user.name}" 吗？`,
+      '确认操作',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    await updateUserStatus(user.id, newStatus)
+    user.status = newStatus
+    ElMessage.success(`${actionText}成功`)
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('操作失败')
+    }
+  }
 }
+
+// 页面加载时获取数据
+onMounted(() => {
+  loadUsers()
+})
 </script>
 
 <style scoped>
