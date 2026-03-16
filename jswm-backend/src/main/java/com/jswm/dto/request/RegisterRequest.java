@@ -14,4 +14,6 @@ public class RegisterRequest {
     private String phone;
 
     private String realName;
+
+    private Integer role;
 }

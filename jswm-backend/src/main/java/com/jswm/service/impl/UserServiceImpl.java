@@ -30,7 +30,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public SysUser register(String username, String password, String phone, String realName) {
+    public SysUser register(String username, String password, String phone, String realName, Integer role) {
         SysUser existUser = userMapper.selectByUsername(username);
         if (existUser != null) {
             throw new BusinessException(1001, "用户名已存在");
@@ -46,7 +46,8 @@ public class UserServiceImpl implements UserService {
         user.setPassword(BCrypt.hashpw(password, BCrypt.gensalt()));
         user.setPhone(phone);
         user.setRealName(realName);
-        user.setRole(0);
+        // 角色：0=学生，1=商家，2=管理员（仅后台创建）
+        user.setRole(role != null ? role : 0);
         user.setStatus(1);
         userMapper.insert(user);
         return user;

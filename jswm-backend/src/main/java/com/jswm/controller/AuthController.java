@@ -33,7 +33,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public Result<Void> register(@Validated @RequestBody RegisterRequest request) {
-        userService.register(request.getUsername(), request.getPassword(), request.getPhone(), request.getRealName());
+        userService.register(request.getUsername(), request.getPassword(), request.getPhone(), request.getRealName(), request.getRole());
         return Result.success("注册成功", null);
     }
 }

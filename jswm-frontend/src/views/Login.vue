@@ -173,17 +173,18 @@ const handleLogin = async () => {
     ElMessage.success('登录成功')
     
     // 根据角色跳转到不同首页
+    // 角色定义: 0=学生, 1=商家, 2=管理员
     const role = userData.role
     console.log('登录成功，用户角色:', role)
     switch(role) {
       case 0: // 学生
         router.push('/home')
         break
-      case 1: // 管理员
-        router.push('/admin/dashboard')
-        break
-      case 2: // 商家
+      case 1: // 商家
         router.push('/merchant/dashboard')
+        break
+      case 2: // 管理员
+        router.push('/admin/dashboard')
         break
       default:
         router.push('/home')

@@ -91,16 +91,16 @@
           <div class="role-selector">
             <button
               type="button"
-              :class="['role-btn', { active: form.role === 1 }]"
-              @click="form.role = 1"
+              :class="['role-btn', { active: form.role === 0 }]"
+              @click="form.role = 0"
             >
               <el-icon><User /></el-icon>
               <span>学生</span>
             </button>
             <button
               type="button"
-              :class="['role-btn', { active: form.role === 2 }]"
-              @click="form.role = 2"
+              :class="['role-btn', { active: form.role === 1 }]"
+              @click="form.role = 1"
             >
               <el-icon><Shop /></el-icon>
               <span>商家</span>
@@ -141,7 +141,7 @@ const form = reactive({
   confirmPassword: '',
   realName: '',
   phone: '',
-  role: 1
+  role: 0  // 默认学生，0=学生, 1=商家
 })
 
 const handleRegister = async () => {
