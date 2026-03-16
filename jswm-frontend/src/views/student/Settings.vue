@@ -107,18 +107,6 @@
               <el-switch v-model="settings.darkMode" active-color="#667eea" />
             </div>
           </div>
-          <div class="setting-item">
-            <div class="item-left">
-              <div class="item-icon red">
-                <el-icon><Delete /></el-icon>
-              </div>
-              <span class="item-label">清除缓存</span>
-            </div>
-            <div class="item-right">
-              <span class="item-value">{{ cacheSize }}</span>
-              <el-icon><ArrowRight /></el-icon>
-            </div>
-          </div>
         </div>
       </div>
 
