@@ -3,6 +3,7 @@ package com.jswm.entity;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class BizOrder {
@@ -28,4 +29,6 @@ public class BizOrder {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Integer isDeleted;
+
+    private List<BizOrderItem> items;
 }

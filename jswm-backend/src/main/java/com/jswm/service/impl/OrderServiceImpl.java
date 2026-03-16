@@ -37,17 +37,34 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public BizOrder getOrderById(Long id) {
-        return orderMapper.selectById(id);
+        BizOrder order = orderMapper.selectById(id);
+        if (order != null) {
+            List<BizOrderItem> items = orderItemMapper.selectByOrderId(id);
+            order.setItems(items);
+        }
+        return order;
     }
 
     @Override
     public BizOrder getOrderByOrderNo(String orderNo) {
-        return orderMapper.selectByOrderNo(orderNo);
+        BizOrder order = orderMapper.selectByOrderNo(orderNo);
+        if (order != null) {
+            List<BizOrderItem> items = orderItemMapper.selectByOrderId(order.getId());
+            order.setItems(items);
+        }
+        return order;
     }
 
     @Override
     public List<BizOrder> getOrderList(Long userId, Long merchantId, Integer status) {
-        return orderMapper.selectList(userId, merchantId, status);
+        List<BizOrder> orders = orderMapper.selectList(userId, merchantId, status);
+        if (orders != null && !orders.isEmpty()) {
+            for (BizOrder order : orders) {
+                List<BizOrderItem> items = orderItemMapper.selectByOrderId(order.getId());
+                order.setItems(items);
+            }
+        }
+        return orders;
     }
 
     @Override

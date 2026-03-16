@@ -103,19 +103,25 @@
 
             <!-- Order Items -->
             <div class="order-items">
-              <div class="items-images">
+              <!-- 商品列表 -->
+              <div class="items-list">
                 <div 
-                  v-for="(item, index) in order.items?.slice(0, 4)" 
+                  v-for="(item, index) in order.items" 
                   :key="index"
-                  class="item-image"
+                  class="item-row"
                 >
-                  <img :src="item.dishImage || '/dish-default.jpg'" alt="">
-                  <span v-if="item.quantity > 1" class="item-quantity">x{{ item.quantity }}</span>
-                </div>
-                <div v-if="order.items?.length > 4" class="more-items">
-                  +{{ order.items.length - 4 }}
+                  <div class="item-image-small">
+                    <img :src="item.dishImage || '/dish-default.jpg'" alt="">
+                  </div>
+                  <div class="item-info">
+                    <span class="item-name">{{ item.dishName }}</span>
+                    <span class="item-price">¥{{ item.price }}</span>
+                  </div>
+                  <span class="item-quantity">x{{ item.quantity }}</span>
                 </div>
               </div>
+              
+              <!-- 订单汇总 -->
               <div class="order-summary">
                 <span class="item-count">共{{ getTotalQuantity(order) }}件</span>
                 <div class="price-info">
@@ -652,47 +658,62 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
-.items-images {
+.items-list {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.item-image {
-  width: 64px;
-  height: 64px;
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.item-row:last-child {
+  border-bottom: none;
+}
+
+.item-image-small {
+  width: 60px;
+  height: 60px;
   border-radius: 8px;
   overflow: hidden;
-  position: relative;
+  flex-shrink: 0;
   background: #f5f5f5;
 }
 
-.item-image img {
+.item-image-small img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.item-quantity {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 4px 0 0 0;
+.item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.more-items {
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
-  background: #f5f5f5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.item-name {
   font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.4;
+}
+
+.item-price {
+  font-size: 13px;
+  color: #ff6b6b;
+  font-weight: 500;
+}
+
+.item-quantity {
+  font-size: 13px;
   color: #999;
   font-weight: 500;
 }
