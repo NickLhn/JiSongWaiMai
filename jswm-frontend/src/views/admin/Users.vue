@@ -24,7 +24,15 @@
         <span>操作</span>
       </div>
       <div class="table-body">
-        <div v-for="user in filteredUsers" :key="user.id" class="table-row">
+        <div v-if="loading" class="loading-state">
+          <el-icon class="loading-icon"><Loading /></el-icon>
+          <span>加载中...</span>
+        </div>
+        <div v-else-if="users.length === 0" class="empty-state">
+          <el-icon><UserIcon /></el-icon>
+          <span>暂无用户数据</span>
+        </div>
+        <div v-for="user in users" :key="user.id" class="table-row">
           <div class="user-info">
             <el-avatar :size="40" :src="user.avatar" />
             <div class="user-detail">
@@ -61,7 +69,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { Search, Filter } from '@element-plus/icons-vue'
+import { Search, Filter, Loading, User as UserIcon } from '@element-plus/icons-vue'
 import { getUserList, updateUserStatus } from '@/api/adminUser'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -256,6 +264,32 @@ onMounted(() => {
 
 .table-row:last-child {
   border-bottom: none;
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  color: #8c8c8c;
+  gap: 12px;
+}
+
+.loading-state .el-icon {
+  font-size: 32px;
+  animation: rotate 1s linear infinite;
+}
+
+.empty-state .el-icon {
+  font-size: 48px;
+  color: #d9d9d9;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .user-info {
