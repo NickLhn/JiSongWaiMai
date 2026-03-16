@@ -155,7 +155,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { Search, Loading, Document } from '@element-plus/icons-vue'
-import { getOrderList, updateOrderStatus, cancelOrder } from '@/api/adminOrder'
+import { getOrderList, updateOrderStatus, cancelOrder as cancelOrderApi } from '@/api/adminOrder'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const searchQuery = ref('')
@@ -292,7 +292,7 @@ const handleConfirmCancel = async () => {
   
   try {
     cancelLoading.value = true
-    await cancelOrder(cancelForm.value.orderId, cancelForm.value.reason)
+    await cancelOrderApi(cancelForm.value.orderId, cancelForm.value.reason)
     ElMessage.success('订单已取消')
     cancelDialogVisible.value = false
     loadOrders()

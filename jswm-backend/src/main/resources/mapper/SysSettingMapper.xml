@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jswm.mapper.SysSettingMapper">
+
+    <select id="selectByKey" resultType="com.jswm.entity.SysSetting">
+        SELECT * FROM sys_setting WHERE setting_key = #{key}
+    </select>
+
+    <select id="selectAll" resultType="com.jswm.entity.SysSetting">
+        SELECT * FROM sys_setting ORDER BY id
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_setting (setting_key, setting_value, description)
+        VALUES (#{settingKey}, #{settingValue}, #{description})
+    </insert>
+
+    <update id="updateByKey">
+        UPDATE sys_setting 
+        SET setting_value = #{value}, update_time = NOW()
+        WHERE setting_key = #{key}
+    </update>
+
+    <delete id="deleteByKey">
+        DELETE FROM sys_setting WHERE setting_key = #{key}
+    </delete>
+
+</mapper>

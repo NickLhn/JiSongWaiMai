@@ -383,6 +383,36 @@ INSERT INTO sys_notice (title, content, type, status) VALUES
 ('新商家入驻通知', '校园奶茶店已入驻平台，欢迎同学们品尝！', 2, 1);
 
 -- =============================================
+-- 13. 系统设置表 (sys_setting)
+-- =============================================
+DROP TABLE IF EXISTS sys_setting;
+CREATE TABLE sys_setting (
+    id BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    setting_key VARCHAR(50) NOT NULL COMMENT '设置键',
+    setting_value VARCHAR(500) DEFAULT NULL COMMENT '设置值',
+    description VARCHAR(200) DEFAULT NULL COMMENT '描述',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_setting_key (setting_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统设置表';
+
+-- 插入默认系统设置
+INSERT INTO sys_setting (setting_key, setting_value, description) VALUES
+('system_name', '吉送外卖', '系统名称'),
+('system_logo', '', '系统Logo URL'),
+('announcement', '欢迎使用吉送外卖系统，祝您用餐愉快！', '系统公告'),
+('auto_cancel_time', '15', '自动取消时间（分钟）'),
+('delivery_fee', '0', '配送费（元）'),
+('min_order_amount', '15', '起送金额（元）'),
+('delivery_time', '30', '预计配送时间（分钟）'),
+('notify_new_order', 'true', '新订单通知'),
+('notify_order_complete', 'true', '订单完成通知'),
+('notify_merchant_apply', 'true', '商家入驻通知'),
+('login_fail_limit', '5', '登录失败锁定次数'),
+('lock_time', '30', '锁定时间（分钟）');
+
+-- =============================================
 -- 创建视图
 -- =============================================
 

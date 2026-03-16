@@ -1,18 +1,11 @@
 import request from '@/utils/request'
 
-/**
- * 上传文件
- * @param {File} file - 文件对象
- * @param {string} directory - 上传目录，默认 'images'
- * @returns {Promise} 上传结果，包含文件URL
- */
-export function uploadFile(file, directory = 'images') {
+// 上传图片
+export function uploadImage(file) {
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('directory', directory)
-
   return request({
-    url: '/v1/upload',
+    url: '/v1/upload/image',
     method: 'post',
     data: formData,
     headers: {
@@ -21,15 +14,16 @@ export function uploadFile(file, directory = 'images') {
   })
 }
 
-/**
- * 删除文件
- * @param {string} fileUrl - 文件URL
- * @returns {Promise}
- */
-export function deleteFile(fileUrl) {
+// 上传文件
+export function uploadFile(file) {
+  const formData = new FormData()
+  formData.append('file', file)
   return request({
-    url: '/v1/upload',
-    method: 'delete',
-    params: { url: fileUrl }
+    url: '/v1/upload/file',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   })
 }
