@@ -22,3 +22,11 @@ export function deleteUser(id) {
     method: 'delete'
   })
 }
+
+export function updateUser(id, data) {
+  return request({
+    url: `/v1/admin/users/${id}`,
+    method: 'put',
+    data
+  })
+}

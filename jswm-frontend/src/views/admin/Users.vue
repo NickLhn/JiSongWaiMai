@@ -64,13 +64,61 @@
         <button :disabled="currentPage === totalPages" @click="currentPage++">下一页</button>
       </div>
     </div>
+
+    <!-- 编辑用户弹窗 -->
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑用户"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="editFormRef"
+        :model="editForm"
+        :rules="editRules"
+        label-width="80px"
+        class="edit-form"
+      >
+        <el-form-item label="用户名">
+          <el-input v-model="editForm.username" disabled />
+        </el-form-item>
+        <el-form-item label="真实姓名" prop="realName">
+          <el-input v-model="editForm.realName" placeholder="请输入真实姓名" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="editForm.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="editForm.email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <el-form-item label="角色" prop="role">
+          <el-select v-model="editForm.role" placeholder="请选择角色" style="width: 100%">
+            <el-option label="学生" :value="0" />
+            <el-option label="商家" :value="1" />
+            <el-option label="管理员" :value="2" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="editForm.status">
+            <el-radio :label="1">正常</el-radio>
+            <el-radio :label="0">禁用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="editDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="editLoading" @click="handleSaveEdit">保存</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { Search, Filter, Loading, User as UserIcon } from '@element-plus/icons-vue'
-import { getUserList, updateUserStatus } from '@/api/adminUser'
+import { getUserList, updateUserStatus, updateUser } from '@/api/adminUser'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const searchQuery = ref('')
@@ -79,6 +127,33 @@ const pageSize = 10
 const total = ref(0)
 const users = ref([])
 const loading = ref(false)
+
+// 编辑弹窗相关
+const editDialogVisible = ref(false)
+const editLoading = ref(false)
+const editFormRef = ref(null)
+const editForm = ref({
+  id: null,
+  username: '',
+  realName: '',
+  phone: '',
+  email: '',
+  role: 0,
+  status: 1
+})
+
+const editRules = {
+  realName: [
+    { required: true, message: '请输入真实姓名', trigger: 'blur' },
+    { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+  ],
+  phone: [
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+  ],
+  email: [
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+  ]
+}
 
 // 加载用户列表
 const loadUsers = async () => {
@@ -137,8 +212,43 @@ const getRoleClass = (role) => {
 }
 
 const editUser = (user) => {
-  console.log('编辑用户:', user)
-  ElMessage.info('编辑功能开发中')
+  editForm.value = {
+    id: user.id,
+    username: user.name,
+    realName: user.realName || user.name,
+    phone: user.phone === '-' ? '' : user.phone,
+    email: user.email === '-' ? '' : user.email,
+    role: user.role,
+    status: user.status
+  }
+  editDialogVisible.value = true
+}
+
+const handleSaveEdit = async () => {
+  if (!editFormRef.value) return
+  
+  try {
+    await editFormRef.value.validate()
+    editLoading.value = true
+    
+    await updateUser(editForm.value.id, {
+      realName: editForm.value.realName,
+      phone: editForm.value.phone,
+      email: editForm.value.email,
+      role: editForm.value.role,
+      status: editForm.value.status
+    })
+    
+    ElMessage.success('保存成功')
+    editDialogVisible.value = false
+    loadUsers() // 刷新列表
+  } catch (error) {
+    if (error !== 'validation') {
+      ElMessage.error('保存失败')
+    }
+  } finally {
+    editLoading.value = false
+  }
 }
 
 const toggleStatus = async (user) => {

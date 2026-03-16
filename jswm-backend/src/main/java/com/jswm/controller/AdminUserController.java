@@ -82,4 +82,11 @@ public class AdminUserController {
         userMapper.deleteById(id);
         return Result.success();
     }
+
+    @PutMapping("/{id}")
+    public Result<Void> updateUser(@PathVariable Long id, @RequestBody SysUser user) {
+        user.setId(id);
+        userMapper.updateById(user);
+        return Result.success();
+    }
 }
