@@ -3,73 +3,198 @@
     <div class="page-header">
       <h2>订单管理</h2>
       <div class="filter-tabs">
-        <button :class="{ active: activeTab === 'all' }" @click="activeTab = 'all'">全部</button>
-        <button :class="{ active: activeTab === 'pending' }" @click="activeTab = 'pending'">待处理</button>
-        <button :class="{ active: activeTab === 'processing' }" @click="activeTab = 'processing'">制作中</button>
-        <button :class="{ active: activeTab === 'delivering' }" @click="activeTab = 'delivering'">配送中</button>
-        <button :class="{ active: activeTab === 'completed' }" @click="activeTab = 'completed'">已完成</button>
+        <button :class="{ active: activeTab === 'all' }" @click="changeTab('all')">全部</button>
+        <button :class="{ active: activeTab === 'pending' }" @click="changeTab('pending')">待处理</button>
+        <button :class="{ active: activeTab === 'processing' }" @click="changeTab('processing')">制作中</button>
+        <button :class="{ active: activeTab === 'delivering' }" @click="changeTab('delivering')">配送中</button>
+        <button :class="{ active: activeTab === 'completed' }" @click="changeTab('completed')">已完成</button>
       </div>
     </div>
-    
-    <div class="orders-list">
-      <div v-for="order in filteredOrders" :key="order.id" class="order-card">
+
+    <div v-if="loading" class="loading-state">
+      <el-skeleton :rows="3" animated />
+    </div>
+
+    <div v-else-if="orders.length === 0" class="empty-state">
+      <el-icon :size="64"><Document /></el-icon>
+      <p>暂无订单</p>
+    </div>
+
+    <div v-else class="orders-list">
+      <div v-for="order in orders" :key="order.id" class="order-card">
         <div class="order-header">
           <span class="order-no">{{ order.orderNo }}</span>
           <span :class="['status', getStatusClass(order.status)]">{{ getStatusText(order.status) }}</span>
         </div>
         <div class="order-body">
           <div class="customer-info">
-            <p><strong>{{ order.customerName }}</strong> {{ order.customerPhone }}</p>
-            <p class="address">{{ order.address }}</p>
+            <p><strong>{{ order.receiverName }}</strong> {{ order.receiverPhone }}</p>
+            <p class="address">{{ order.deliveryAddress }}</p>
           </div>
           <div class="order-items">
-            <p v-for="(item, idx) in order.items" :key="idx">{{ item.name }} x{{ item.quantity }}</p>
+            <p v-for="(item, idx) in order.items" :key="idx">{{ item.dishName }} x{{ item.quantity }}</p>
           </div>
           <div class="order-total">
-            <span>合计: <strong>¥{{ order.total }}</strong></span>
+            <span>合计: <strong>¥{{ order.totalAmount }}</strong></span>
           </div>
         </div>
         <div class="order-actions">
-          <button v-if="order.status === 1" class="primary" @click="acceptOrder(order)">接单</button>
-          <button v-if="order.status === 2" class="primary" @click="startDelivery(order)">开始配送</button>
-          <button v-if="order.status === 3" class="primary" @click="completeOrder(order)">完成订单</button>
+          <button v-if="order.status === 1" class="primary" @click="handleAccept(order)">接单</button>
+          <button v-if="order.status === 2" class="primary" @click="handleDeliver(order)">开始配送</button>
+          <button v-if="order.status === 3" class="primary" @click="handleComplete(order)">完成订单</button>
           <button @click="viewDetail(order)">查看详情</button>
         </div>
       </div>
     </div>
+
+    <!-- 订单详情弹窗 -->
+    <el-dialog v-model="detailVisible" title="订单详情" width="600px">
+      <div v-if="selectedOrder" class="order-detail">
+        <div class="detail-section">
+          <h4>订单信息</h4>
+          <p><span>订单号:</span> {{ selectedOrder.orderNo }}</p>
+          <p><span>下单时间:</span> {{ selectedOrder.createTime }}</p>
+          <p><span>订单状态:</span> {{ getStatusText(selectedOrder.status) }}</p>
+        </div>
+        <div class="detail-section">
+          <h4>收货信息</h4>
+          <p><span>收货人:</span> {{ selectedOrder.receiverName }}</p>
+          <p><span>联系电话:</span> {{ selectedOrder.receiverPhone }}</p>
+          <p><span>配送地址:</span> {{ selectedOrder.deliveryAddress }}</p>
+        </div>
+        <div class="detail-section">
+          <h4>订单商品</h4>
+          <div v-for="(item, idx) in selectedOrder.items" :key="idx" class="detail-item">
+            <span>{{ item.dishName }} x{{ item.quantity }}</span>
+            <span>¥{{ item.price * item.quantity }}</span>
+          </div>
+        </div>
+        <div class="detail-section">
+          <h4>费用明细</h4>
+          <p><span>商品总额:</span> ¥{{ selectedOrder.totalAmount - selectedOrder.deliveryFee }}</p>
+          <p><span>配送费:</span> ¥{{ selectedOrder.deliveryFee }}</p>
+          <p class="total"><span>实付金额:</span> <strong>¥{{ selectedOrder.totalAmount }}</strong></p>
+        </div>
+        <div v-if="selectedOrder.remark" class="detail-section">
+          <h4>订单备注</h4>
+          <p>{{ selectedOrder.remark }}</p>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
+import { Document } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getMerchantOrders, acceptOrder, deliverOrder, completeOrder } from '@/api/merchantOrder'
 
 const activeTab = ref('all')
-const orders = ref([
-  { id: 1, orderNo: 'ORD202603120001', customerName: '张三', customerPhone: '13800138001', address: '1号楼301', items: [{ name: '红烧肉盖饭', quantity: 2 }], total: 30, status: 1 },
-  { id: 2, orderNo: 'ORD202603120002', customerName: '李四', customerPhone: '13800138002', address: '2号楼502', items: [{ name: '宫保鸡丁饭', quantity: 1 }], total: 13, status: 2 },
-  { id: 3, orderNo: 'ORD202603120003', customerName: '王五', customerPhone: '13800138003', address: '3号楼101', items: [{ name: '番茄鸡蛋面', quantity: 3 }], total: 30, status: 1 }
-])
+const orders = ref([])
+const loading = ref(false)
+const detailVisible = ref(false)
+const selectedOrder = ref(null)
 
-const filteredOrders = computed(() => {
-  if (activeTab.value === 'all') return orders.value
-  const statusMap = { pending: 1, processing: 2, delivering: 3, completed: 4 }
-  return orders.value.filter(o => o.status === statusMap[activeTab.value])
-})
+const statusMap = {
+  all: null,
+  pending: 1,
+  processing: 2,
+  delivering: 3,
+  completed: 4
+}
+
+const loadOrders = async () => {
+  try {
+    loading.value = true
+    const status = statusMap[activeTab.value]
+    const res = await getMerchantOrders(status)
+    if (res.code === 200) {
+      orders.value = res.data || []
+    } else {
+      ElMessage.error(res.message || '加载订单失败')
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '加载订单失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const changeTab = (tab) => {
+  activeTab.value = tab
+  loadOrders()
+}
 
 const getStatusClass = (status) => {
-  const map = { 1: 'pending', 2: 'processing', 3: 'delivering', 4: 'completed' }
+  const map = { 1: 'pending', 2: 'processing', 3: 'delivering', 4: 'completed', 5: 'cancelled' }
   return map[status]
 }
 
 const getStatusText = (status) => {
-  const map = { 1: '待接单', 2: '制作中', 3: '配送中', 4: '已完成' }
+  const map = { 1: '待接单', 2: '制作中', 3: '配送中', 4: '已完成', 5: '已取消' }
   return map[status]
 }
 
-const acceptOrder = (order) => { order.status = 2 }
-const startDelivery = (order) => { order.status = 3 }
-const completeOrder = (order) => { order.status = 4 }
-const viewDetail = (order) => { console.log('查看订单:', order) }
+const handleAccept = async (order) => {
+  try {
+    await ElMessageBox.confirm('确认接单？', '提示', { type: 'warning' })
+    const res = await acceptOrder(order.id)
+    if (res.code === 200) {
+      ElMessage.success('接单成功')
+      loadOrders()
+    } else {
+      ElMessage.error(res.message || '操作失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '操作失败')
+    }
+  }
+}
+
+const handleDeliver = async (order) => {
+  try {
+    await ElMessageBox.confirm('确认开始配送？', '提示', { type: 'warning' })
+    const res = await deliverOrder(order.id)
+    if (res.code === 200) {
+      ElMessage.success('开始配送')
+      loadOrders()
+    } else {
+      ElMessage.error(res.message || '操作失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '操作失败')
+    }
+  }
+}
+
+const handleComplete = async (order) => {
+  try {
+    await ElMessageBox.confirm('确认完成订单？', '提示', { type: 'warning' })
+    const res = await completeOrder(order.id)
+    if (res.code === 200) {
+      ElMessage.success('订单已完成')
+      loadOrders()
+    } else {
+      ElMessage.error(res.message || '操作失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '操作失败')
+    }
+  }
+}
+
+const viewDetail = (order) => {
+  selectedOrder.value = order
+  detailVisible.value = true
+}
+
+onMounted(() => {
+  loadOrders()
+})
 </script>
 
 <style scoped>
@@ -99,17 +224,35 @@ const viewDetail = (order) => { console.log('查看订单:', order) }
 .filter-tabs button {
   padding: 8px 16px;
   border: 1px solid #d9d9d9;
-  background: white;
-  border-radius: 6px;
-  font-size: 14px;
+  background: #fff;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
+}
+
+.filter-tabs button:hover {
+  border-color: #1890ff;
+  color: #1890ff;
 }
 
 .filter-tabs button.active {
-  background: #ff6b35;
-  color: white;
-  border-color: #ff6b35;
+  background: #1890ff;
+  border-color: #1890ff;
+  color: #fff;
+}
+
+.loading-state {
+  padding: 40px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: #999;
+}
+
+.empty-state .el-icon {
+  margin-bottom: 16px;
 }
 
 .orders-list {
@@ -119,9 +262,9 @@ const viewDetail = (order) => { console.log('查看订单:', order) }
 }
 
 .order-card {
-  background: white;
-  border-radius: 16px;
-  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
@@ -129,15 +272,14 @@ const viewDetail = (order) => { console.log('查看订单:', order) }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 16px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
   border-bottom: 1px solid #f0f0f0;
 }
 
 .order-no {
-  font-family: monospace;
   font-size: 14px;
-  color: #1f1f1f;
+  color: #666;
 }
 
 .status {
@@ -147,10 +289,30 @@ const viewDetail = (order) => { console.log('查看订单:', order) }
   font-weight: 500;
 }
 
-.status.pending { background: #fff7e6; color: #fa8c16; }
-.status.processing { background: #e6f7ff; color: #1890ff; }
-.status.delivering { background: #f9f0ff; color: #722ed1; }
-.status.completed { background: #f6ffed; color: #52c41a; }
+.status.pending {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.status.processing {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.status.delivering {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status.completed {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status.cancelled {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
 
 .order-body {
   margin-bottom: 16px;
@@ -161,39 +323,35 @@ const viewDetail = (order) => { console.log('查看订单:', order) }
 }
 
 .customer-info p {
-  margin: 0;
+  margin: 4px 0;
   font-size: 14px;
-  color: #595959;
 }
 
 .customer-info .address {
-  color: #8c8c8c;
+  color: #666;
   font-size: 13px;
-  margin-top: 4px;
 }
 
 .order-items {
   background: #f5f5f5;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 4px;
   margin-bottom: 12px;
 }
 
 .order-items p {
-  margin: 0;
+  margin: 4px 0;
   font-size: 14px;
-  color: #595959;
 }
 
 .order-total {
   text-align: right;
   font-size: 14px;
-  color: #595959;
 }
 
 .order-total strong {
-  color: #ff6b35;
-  font-size: 18px;
+  color: #ff4d4f;
+  font-size: 16px;
 }
 
 .order-actions {
@@ -205,20 +363,81 @@ const viewDetail = (order) => { console.log('查看订单:', order) }
 .order-actions button {
   padding: 8px 16px;
   border: 1px solid #d9d9d9;
-  background: white;
-  border-radius: 6px;
-  font-size: 13px;
+  background: #fff;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
-}
-
-.order-actions button.primary {
-  background: #ff6b35;
-  color: white;
-  border-color: #ff6b35;
+  transition: all 0.3s;
 }
 
 .order-actions button:hover {
-  opacity: 0.8;
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.order-actions button.primary {
+  background: #1890ff;
+  border-color: #1890ff;
+  color: #fff;
+}
+
+.order-actions button.primary:hover {
+  background: #40a9ff;
+}
+
+/* 订单详情样式 */
+.order-detail {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.detail-section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-section:last-child {
+  border-bottom: none;
+}
+
+.detail-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f1f1f;
+  margin: 0 0 12px 0;
+}
+
+.detail-section p {
+  margin: 8px 0;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.detail-section p span:first-child {
+  color: #666;
+}
+
+.detail-section p.total {
+  font-size: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #e8e8e8;
+}
+
+.detail-section p.total strong {
+  color: #ff4d4f;
+  font-size: 18px;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
 }
 </style>

@@ -75,9 +75,8 @@
         <el-form-item label="菜品图片">
           <el-upload
             class="avatar-uploader"
-            action="/api/v1/upload"
+            :http-request="customUpload"
             :show-file-list="false"
-            :on-success="handleUploadSuccess"
             :before-upload="beforeUpload"
           >
             <img v-if="form.image" :src="form.image" class="avatar" />
@@ -108,6 +107,7 @@ import { ref, onMounted } from 'vue'
 import { Plus, Food } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyDishes, addDish, updateDish, deleteDish as deleteDishApi } from '@/api/dish'
+import { uploadImage } from '@/api/upload'
 
 const dishes = ref([])
 const loading = ref(false)
@@ -134,9 +134,13 @@ const loadDishes = async () => {
   try {
     loading.value = true
     const res = await getMyDishes()
-    dishes.value = res.data || []
+    if (res.code === 200) {
+      dishes.value = res.data || []
+    } else {
+      ElMessage.error(res.message || '加载菜品失败')
+    }
   } catch (error) {
-    ElMessage.error('加载菜品失败')
+    ElMessage.error(error.message || '加载菜品失败')
   } finally {
     loading.value = false
   }
@@ -211,12 +215,20 @@ const deleteDish = async (dish) => {
   }
 }
 
-const handleUploadSuccess = (res) => {
-  if (res.code === 200) {
-    form.value.image = res.data
-    ElMessage.success('上传成功')
-  } else {
-    ElMessage.error(res.message || '上传失败')
+const customUpload = async (options) => {
+  try {
+    const res = await uploadImage(options.file)
+    if (res.code === 200) {
+      form.value.image = res.data
+      ElMessage.success('上传成功')
+      options.onSuccess(res)
+    } else {
+      ElMessage.error(res.message || '上传失败')
+      options.onError(new Error(res.message))
+    }
+  } catch (error) {
+    ElMessage.error('上传失败')
+    options.onError(error)
   }
 }
 

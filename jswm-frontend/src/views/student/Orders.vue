@@ -290,7 +290,7 @@ const confirmOrder = async (order) => {
 }
 
 const reviewOrder = (order) => {
-  router.push(`/review?orderId=${order.id}`)
+  router.push(`/review/create?orderId=${order.id}`)
 }
 
 const cancelOrder = async (order) => {

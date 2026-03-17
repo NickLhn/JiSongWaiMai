@@ -26,12 +26,26 @@ public class OssUtil {
     @PostConstruct
     public void init() {
         if (ossConfig.isEnabled()) {
-            ossClient = new OSSClientBuilder().build(
-                ossConfig.getEndpoint(),
-                ossConfig.getAccessKeyId(),
-                ossConfig.getAccessKeySecret()
-            );
-            log.info("OSS客户端初始化成功");
+            try {
+                // 创建客户端时添加超时配置
+                com.aliyun.oss.ClientBuilderConfiguration conf = new com.aliyun.oss.ClientBuilderConfiguration();
+                conf.setConnectionTimeout(30000); // 连接超时30秒
+                conf.setSocketTimeout(60000);     // 读取超时60秒
+                conf.setMaxErrorRetry(3);         // 最大重试3次
+
+                ossClient = new OSSClientBuilder().build(
+                    ossConfig.getEndpoint(),
+                    ossConfig.getAccessKeyId(),
+                    ossConfig.getAccessKeySecret(),
+                    conf
+                );
+
+                // 测试连接
+                boolean bucketExists = ossClient.doesBucketExist(ossConfig.getBucketName());
+                log.info("OSS客户端初始化成功，bucket: {}, exists: {}", ossConfig.getBucketName(), bucketExists);
+            } catch (Exception e) {
+                log.error("OSS客户端初始化失败: {}", e.getMessage(), e);
+            }
         }
     }
 
@@ -57,19 +71,31 @@ public class OssUtil {
         String newFileName = UUID.randomUUID().toString() + suffix;
         String objectName = "JiSongWaiMai/" + directory + "/" + newFileName;
 
-        // 上传文件
-        PutObjectRequest putObjectRequest = new PutObjectRequest(
-            ossConfig.getBucketName(),
-            objectName,
-            file.getInputStream()
-        );
-        ossClient.putObject(putObjectRequest);
+        log.info("开始上传文件到OSS: bucket={}, objectName={}, size={}", 
+            ossConfig.getBucketName(), objectName, file.getSize());
 
-        // 返回访问URL
-        if (ossConfig.getCustomDomain() != null && !ossConfig.getCustomDomain().isEmpty()) {
-            return ossConfig.getCustomDomain() + "/" + objectName;
-        } else {
-            return "https://" + ossConfig.getBucketName() + "." + ossConfig.getEndpoint() + "/" + objectName;
+        try {
+            // 上传文件
+            PutObjectRequest putObjectRequest = new PutObjectRequest(
+                ossConfig.getBucketName(),
+                objectName,
+                file.getInputStream()
+            );
+            ossClient.putObject(putObjectRequest);
+            log.info("文件上传成功: {}", objectName);
+
+            // 返回访问URL
+            String fileUrl;
+            if (ossConfig.getCustomDomain() != null && !ossConfig.getCustomDomain().isEmpty()) {
+                fileUrl = ossConfig.getCustomDomain() + "/" + objectName;
+            } else {
+                fileUrl = "https://" + ossConfig.getBucketName() + "." + ossConfig.getEndpoint() + "/" + objectName;
+            }
+            log.info("文件访问URL: {}", fileUrl);
+            return fileUrl;
+        } catch (Exception e) {
+            log.error("OSS上传失败: {}", e.getMessage(), e);
+            throw new IOException("OSS上传失败: " + e.getMessage(), e);
         }
     }
 
@@ -84,8 +110,12 @@ public class OssUtil {
         // 从URL中提取objectName
         String objectName = extractObjectName(fileUrl);
         if (objectName != null) {
-            ossClient.deleteObject(ossConfig.getBucketName(), objectName);
-            log.info("删除OSS文件: {}", objectName);
+            try {
+                ossClient.deleteObject(ossConfig.getBucketName(), objectName);
+                log.info("删除OSS文件: {}", objectName);
+            } catch (Exception e) {
+                log.error("删除OSS文件失败: {}", e.getMessage(), e);
+            }
         }
     }
 

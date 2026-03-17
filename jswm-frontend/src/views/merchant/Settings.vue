@@ -79,11 +79,11 @@ const loadSettings = async () => {
     const res = await getMyMerchantInfo()
     if (res.data) {
       form.value = {
-        name: res.data.name || '',
-        notice: res.data.notice || '',
+        name: res.data.shopName || '',
+        notice: res.data.description || '',
         phone: res.data.phone || '',
         businessHours: res.data.businessHours || '',
-        address: res.data.address || '',
+        address: res.data.shopAddress || '',
         deliveryFee: res.data.deliveryFee || 0,
         minOrderAmount: res.data.minOrderAmount || 0,
         deliveryTime: res.data.deliveryTime || 30
@@ -101,10 +101,20 @@ const saveSettings = async () => {
     ElMessage.warning('请输入店铺名称')
     return
   }
-  
+
   try {
     saving.value = true
-    await updateMyMerchantInfo(form.value)
+    // 将前端字段映射为后端字段
+    const data = {
+      shopName: form.value.name,
+      description: form.value.notice,
+      businessHours: form.value.businessHours,
+      shopAddress: form.value.address,
+      deliveryFee: form.value.deliveryFee,
+      minOrderAmount: form.value.minOrderAmount,
+      deliveryTime: form.value.deliveryTime
+    }
+    await updateMyMerchantInfo(data)
     ElMessage.success('设置保存成功')
   } catch (error) {
     ElMessage.error(error.message || '保存失败')
