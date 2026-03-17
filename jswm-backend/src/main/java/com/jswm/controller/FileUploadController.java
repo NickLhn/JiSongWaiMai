@@ -4,8 +4,17 @@ import com.jswm.common.Result;
 import com.jswm.utils.OssUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.annotation.PostConstruct;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -15,16 +24,26 @@ public class FileUploadController {
     @Autowired
     private OssUtil ossUtil;
 
+    @Value("${upload.path:./uploads}")
+    private String uploadPath;
+
+    @Value("${upload.url-prefix:/uploads}")
+    private String urlPrefix;
+
+    @PostConstruct
+    public void init() {
+        // 创建上传目录
+        File dir = new File(uploadPath);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+    }
+
     @PostMapping("/upload")
     public Result<String> uploadFile(@RequestParam("file") MultipartFile file,
                                       @RequestParam(value = "directory", defaultValue = "images") String directory) {
         if (file.isEmpty()) {
             return Result.error("请选择文件");
-        }
-
-        // 检查OSS是否启用
-        if (!ossUtil.isEnabled()) {
-            return Result.error("文件存储服务未启用，请联系管理员配置OSS");
         }
 
         // 获取文件后缀
@@ -38,9 +57,17 @@ public class FileUploadController {
         }
 
         try {
-            log.info("使用OSS上传文件");
-            String fileUrl = ossUtil.uploadFile(file, directory);
-            return Result.success("上传成功", fileUrl);
+            // 如果OSS启用，使用OSS上传
+            if (ossUtil.isEnabled()) {
+                log.info("使用OSS上传文件");
+                String fileUrl = ossUtil.uploadFile(file, directory);
+                return Result.success("上传成功", fileUrl);
+            } else {
+                // 使用本地存储
+                log.info("使用本地存储上传文件");
+                String fileUrl = uploadToLocal(file, directory);
+                return Result.success("上传成功", fileUrl);
+            }
         } catch (Exception e) {
             log.error("文件上传失败", e);
             return Result.error("文件上传失败: " + e.getMessage());
@@ -48,18 +75,49 @@ public class FileUploadController {
     }
 
     /**
+     * 上传到本地存储
+     */
+    private String uploadToLocal(MultipartFile file, String directory) throws IOException {
+        // 创建目录
+        Path dirPath = Paths.get(uploadPath, directory);
+        if (!Files.exists(dirPath)) {
+            Files.createDirectories(dirPath);
+        }
+
+        // 生成文件名
+        String originalFilename = file.getOriginalFilename();
+        String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String newFileName = UUID.randomUUID().toString() + suffix;
+
+        // 保存文件
+        Path filePath = dirPath.resolve(newFileName);
+        Files.copy(file.getInputStream(), filePath);
+
+        // 返回访问URL
+        return urlPrefix + "/" + directory + "/" + newFileName;
+    }
+
+    /**
      * 删除文件
      */
     @DeleteMapping("/upload")
     public Result<Void> deleteFile(@RequestParam("url") String fileUrl) {
-        // 检查OSS是否启用
-        if (!ossUtil.isEnabled()) {
-            return Result.error("文件存储服务未启用");
-        }
-
         try {
-            ossUtil.deleteFile(fileUrl);
-            return Result.success("删除成功", null);
+            // 如果是OSS文件
+            if (ossUtil.isEnabled() && fileUrl.contains(ossUtil.getBucketName())) {
+                ossUtil.deleteFile(fileUrl);
+                return Result.success("删除成功", null);
+            }
+
+            // 本地文件删除
+            if (fileUrl.startsWith(urlPrefix)) {
+                String relativePath = fileUrl.substring(urlPrefix.length());
+                Path filePath = Paths.get(uploadPath, relativePath);
+                Files.deleteIfExists(filePath);
+                return Result.success("删除成功", null);
+            }
+
+            return Result.error("不支持的文件路径");
         } catch (Exception e) {
             log.error("文件删除失败", e);
             return Result.error("删除失败: " + e.getMessage());

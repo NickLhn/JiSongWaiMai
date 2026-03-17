@@ -120,4 +120,11 @@ public class OssUtil {
     public boolean isEnabled() {
         return ossConfig.isEnabled();
     }
+
+    /**
+     * 获取Bucket名称
+     */
+    public String getBucketName() {
+        return ossConfig.getBucketName();
+    }
 }

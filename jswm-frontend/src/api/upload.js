@@ -4,8 +4,9 @@ import request from '@/utils/request'
 export function uploadImage(file) {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('directory', 'logo')
   return request({
-    url: '/v1/upload/image',
+    url: '/v1/upload',
     method: 'post',
     data: formData,
     headers: {
@@ -15,11 +16,12 @@ export function uploadImage(file) {
 }
 
 // 上传文件
-export function uploadFile(file) {
+export function uploadFile(file, directory = 'files') {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('directory', directory)
   return request({
-    url: '/v1/upload/file',
+    url: '/v1/upload',
     method: 'post',
     data: formData,
     headers: {
