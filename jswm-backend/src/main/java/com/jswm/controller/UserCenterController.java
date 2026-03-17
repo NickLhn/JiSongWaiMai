@@ -3,7 +3,9 @@ package com.jswm.controller;
 import com.jswm.entity.BizAddress;
 import com.jswm.entity.BizCoupon;
 import com.jswm.entity.SysUser;
+import com.jswm.entity.UserSetting;
 import com.jswm.service.UserCenterService;
+import com.jswm.service.UserSettingService;
 import com.jswm.utils.JwtUtils;
 import com.jswm.common.Result;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,9 @@ public class UserCenterController {
 
     @Autowired
     private UserCenterService userCenterService;
+
+    @Autowired
+    private UserSettingService userSettingService;
 
     private Long getUserId(HttpServletRequest request) {
         String token = request.getHeader("Authorization");
@@ -132,6 +137,30 @@ public class UserCenterController {
         String oldPassword = params.get("oldPassword");
         String newPassword = params.get("newPassword");
         return Result.success(userCenterService.updatePassword(userId, oldPassword, newPassword));
+    }
+
+    @GetMapping("/setting")
+    public Result<UserSetting> getUserSetting(@RequestHeader("Authorization") String token) {
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        Long userId = JwtUtils.getUserId(token);
+        UserSetting setting = userSettingService.getByUserId(userId);
+        if (setting == null) {
+            return Result.success(new UserSetting());
+        }
+        return Result.success(setting);
+    }
+
+    @PutMapping("/setting")
+    public Result<Boolean> updateUserSetting(@RequestHeader("Authorization") String token,
+                                         @RequestBody UserSetting setting) {
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        Long userId = JwtUtils.getUserId(token);
+        setting.setUserId(userId);
+        return Result.success(userSettingService.saveOrUpdate(setting));
     }
 
     @PutMapping("/avatar")

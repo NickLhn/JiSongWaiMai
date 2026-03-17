@@ -31,4 +31,6 @@ public class BizOrder {
     private Integer isDeleted;
 
     private List<BizOrderItem> items;
+    private String merchantName;
+    private String shopLogo;
 }

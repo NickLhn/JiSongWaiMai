@@ -159,14 +159,15 @@ public class UserCenterServiceImpl implements UserCenterService {
         if (exist == null) {
             throw new BusinessException(2003, "用户不存在");
         }
-        
+
         // 只允许修改指定字段
         SysUser updateUser = new SysUser();
         updateUser.setId(userId);
         updateUser.setRealName(user.getRealName());
         updateUser.setPhone(user.getPhone());
         updateUser.setEmail(user.getEmail());
-        
+        updateUser.setAvatar(user.getAvatar());
+
         return userMapper.updateById(updateUser) > 0;
     }
 

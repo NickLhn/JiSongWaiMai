@@ -127,7 +127,7 @@ import {
   CircleCheck, 
   CircleClose,
   Box,
-  Truck
+  Van
 } from '@element-plus/icons-vue'
 import { getOrderDetail, cancelOrder as cancelOrderApi, confirmOrder as confirmOrderApi } from '@/api/order'
 
@@ -170,13 +170,13 @@ const getStatusDesc = (status) => {
 }
 
 const getStatusIcon = (status) => {
-  const icons = { 
-    0: 'Warning', 
-    1: 'Clock', 
-    2: 'Box', 
-    3: 'Truck', 
-    4: 'CircleCheck', 
-    5: 'CircleClose' 
+  const icons = {
+    0: 'Warning',
+    1: 'Clock',
+    2: 'Box',
+    3: 'Van',
+    4: 'CircleCheck',
+    5: 'CircleClose'
   }
   return icons[status] || 'Clock'
 }

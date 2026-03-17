@@ -77,7 +77,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getUserInfo, updateUserInfo, updateAvatar } from '@/api/user'
+import { getUserInfo, updateUserInfo } from '@/api/user'
 import { uploadFile } from '@/api/upload'
 import { setUserInfo } from '@/utils/auth'
 import { ElMessage } from 'element-plus'
@@ -127,10 +127,14 @@ const handleFileChange = async (e) => {
   try {
     ElMessage.info('正在上传...')
     const res = await uploadFile(file, 'avatars')
-    userInfo.value.avatar = res.data
-    ElMessage.success('头像上传成功')
+    if (res.code === 200) {
+      userInfo.value.avatar = res.data
+      ElMessage.success('头像上传成功')
+    } else {
+      ElMessage.error(res.message || '头像上传失败')
+    }
   } catch (error) {
-    ElMessage.error('头像上传失败')
+    ElMessage.error(error.message || '头像上传失败')
   }
 }
 
@@ -141,7 +145,6 @@ const saveProfile = async () => {
   }
 
   try {
-    // 更新用户信息（包括头像URL）
     const updateData = {
       realName: userInfo.value.realName,
       phone: userInfo.value.phone,
@@ -150,9 +153,11 @@ const saveProfile = async () => {
     }
     await updateUserInfo(updateData)
 
-    // 更新本地存储的用户信息
-    const currentUserInfo = userInfo.value
-    setUserInfo(currentUserInfo)
+    // 重新从服务器获取最新用户信息并更新本地存储
+    const res = await getUserInfo()
+    if (res.data) {
+      setUserInfo(res.data)
+    }
 
     ElMessage.success('保存成功')
     router.back()

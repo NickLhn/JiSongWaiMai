@@ -24,6 +24,8 @@
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
         <result column="is_deleted" property="isDeleted"/>
+        <result column="merchant_name" property="merchantName"/>
+        <result column="shop_logo" property="shopLogo"/>
     </resultMap>
 
     <sql id="Base_Column_List">
@@ -33,9 +35,10 @@
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM biz_order
-        WHERE id = #{id} AND is_deleted = 0
+        SELECT o.*, m.shop_name as merchant_name, m.shop_logo
+        FROM biz_order o
+        LEFT JOIN biz_merchant m ON o.merchant_id = m.id
+        WHERE o.id = #{id} AND o.is_deleted = 0
     </select>
 
     <select id="selectByOrderNo" resultMap="BaseResultMap">

@@ -59,13 +59,6 @@
           <span class="menu-text">我的收藏</span>
           <el-icon class="menu-arrow"><ArrowRight /></el-icon>
         </div>
-        <div class="menu-item" @click="goTo('/coupons')">
-          <div class="menu-icon yellow">
-            <el-icon><Ticket /></el-icon>
-          </div>
-          <span class="menu-text">优惠券</span>
-          <el-icon class="menu-arrow"><ArrowRight /></el-icon>
-        </div>
         <div class="menu-item" @click="goTo('/address')">
           <div class="menu-icon blue">
             <el-icon><Location /></el-icon>

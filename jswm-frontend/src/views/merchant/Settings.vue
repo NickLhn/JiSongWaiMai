@@ -8,6 +8,21 @@
     
     <template v-else>
       <div class="settings-card">
+        <h3>店铺图片</h3>
+        <div class="logo-upload">
+          <div class="upload-area" @click="triggerFileInput">
+            <img v-if="form.logo" :src="form.logo" class="logo-preview" alt="店铺图片" />
+            <div v-else class="upload-placeholder">
+              <el-icon :size="48"><Plus /></el-icon>
+              <p>点击上传店铺图片</p>
+            </div>
+            <input ref="fileInput" type="file" accept="image/*" @change="handleFileChange" style="display: none" />
+          </div>
+          <p class="upload-tip">建议尺寸：800x600px，支持JPG、PNG格式，大小不超过2MB</p>
+        </div>
+      </div>
+      
+      <div class="settings-card">
         <h3>基本信息</h3>
         <div class="form-group">
           <label>店铺名称</label>
@@ -57,12 +72,16 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { getMyMerchantInfo, updateMyMerchantInfo } from '@/api/merchant'
+import { uploadFile } from '@/api/upload'
 
 const loading = ref(true)
 const saving = ref(false)
+const fileInput = ref(null)
 
 const form = ref({
+  logo: '',
   name: '',
   notice: '',
   phone: '',
@@ -79,6 +98,7 @@ const loadSettings = async () => {
     const res = await getMyMerchantInfo()
     if (res.data) {
       form.value = {
+        logo: res.data.shopLogo || '',
         name: res.data.shopName || '',
         notice: res.data.description || '',
         phone: res.data.phone || '',
@@ -96,6 +116,38 @@ const loadSettings = async () => {
   }
 }
 
+const triggerFileInput = () => {
+  fileInput.value.click()
+}
+
+const handleFileChange = async (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+
+  if (!file.type.startsWith('image/')) {
+    ElMessage.error('请选择图片文件')
+    return
+  }
+
+  if (file.size > 2 * 1024 * 1024) {
+    ElMessage.error('图片大小不能超过2MB')
+    return
+  }
+
+  try {
+    ElMessage.info('正在上传...')
+    const res = await uploadFile(file, 'shop')
+    if (res.code === 200) {
+      form.value.logo = res.data
+      ElMessage.success('图片上传成功')
+    } else {
+      ElMessage.error(res.message || '图片上传失败')
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '图片上传失败')
+  }
+}
+
 const saveSettings = async () => {
   if (!form.value.name) {
     ElMessage.warning('请输入店铺名称')
@@ -104,8 +156,8 @@ const saveSettings = async () => {
 
   try {
     saving.value = true
-    // 将前端字段映射为后端字段
     const data = {
+      shopLogo: form.value.logo,
       shopName: form.value.name,
       description: form.value.notice,
       businessHours: form.value.businessHours,
@@ -159,6 +211,54 @@ onMounted(() => {
   margin: 0 0 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid #f0f0f0;
+}
+
+.logo-upload {
+  text-align: center;
+}
+
+.upload-area {
+  width: 100%;
+  max-width: 400px;
+  height: 240px;
+  margin: 0 auto;
+  border: 2px dashed #d9d9d9;
+  border-radius: 12px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.upload-area:hover {
+  border-color: #ff6b35;
+  background: #fafafa;
+}
+
+.logo-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+}
+
+.upload-placeholder p {
+  margin: 12px 0 0;
+  font-size: 14px;
+}
+
+.upload-tip {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: #999;
 }
 
 .form-group {

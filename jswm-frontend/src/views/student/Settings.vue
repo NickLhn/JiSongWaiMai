@@ -64,7 +64,7 @@
               <span class="item-label">订单通知</span>
             </div>
             <div class="item-right">
-              <el-switch v-model="settings.orderNotify" active-color="#667eea" />
+              <el-switch v-model="settings.orderNotify" active-color="#667eea" @change="saveSettings" />
             </div>
           </div>
           <div class="setting-item">
@@ -75,7 +75,7 @@
               <span class="item-label">优惠活动</span>
             </div>
             <div class="item-right">
-              <el-switch v-model="settings.promotionNotify" active-color="#667eea" />
+              <el-switch v-model="settings.promotionNotify" active-color="#667eea" @change="saveSettings" />
             </div>
           </div>
           <div class="setting-item">
@@ -86,7 +86,7 @@
               <span class="item-label">系统消息</span>
             </div>
             <div class="item-right">
-              <el-switch v-model="settings.systemNotify" active-color="#667eea" />
+              <el-switch v-model="settings.systemNotify" active-color="#667eea" @change="saveSettings" />
             </div>
           </div>
         </div>
@@ -104,7 +104,7 @@
               <span class="item-label">深色模式</span>
             </div>
             <div class="item-right">
-              <el-switch v-model="settings.darkMode" active-color="#667eea" />
+              <el-switch v-model="settings.darkMode" active-color="#667eea" @change="saveSettings" />
             </div>
           </div>
         </div>
@@ -177,10 +177,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { removeToken, removeUserInfo } from '@/utils/auth'
+import { getUserSetting, updateUserSetting } from '@/api/userSetting'
 import {
   ArrowLeft, User, Lock, Location, ArrowRight, Bell, Message,
   ChatDotRound, Moon, Delete, InfoFilled, Document, Service,
@@ -189,6 +190,7 @@ import {
 
 const router = useRouter()
 const cacheSize = ref('12.5 MB')
+const loading = ref(false)
 
 const settings = ref({
   orderNotify: true,
@@ -196,6 +198,29 @@ const settings = ref({
   systemNotify: true,
   darkMode: false
 })
+
+const loadSettings = async () => {
+  try {
+    loading.value = true
+    const res = await getUserSetting()
+    if (res.data) {
+      settings.value = res.data
+    }
+  } catch (error) {
+    console.error('加载设置失败', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const saveSettings = async () => {
+  try {
+    await updateUserSetting(settings.value)
+    ElMessage.success('设置保存成功')
+  } catch (error) {
+    ElMessage.error('设置保存失败')
+  }
+}
 
 const logout = async () => {
   try {
@@ -212,6 +237,10 @@ const logout = async () => {
     // 用户取消
   }
 }
+
+onMounted(() => {
+  loadSettings()
+})
 </script>
 
 <style scoped>

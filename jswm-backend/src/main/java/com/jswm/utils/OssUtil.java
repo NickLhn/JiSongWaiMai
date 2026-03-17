@@ -27,6 +27,14 @@ public class OssUtil {
     public void init() {
         if (ossConfig.isEnabled()) {
             try {
+                // 清除系统代理设置
+                System.clearProperty("http.proxyHost");
+                System.clearProperty("http.proxyPort");
+                System.clearProperty("https.proxyHost");
+                System.clearProperty("https.proxyPort");
+                System.clearProperty("socksProxyHost");
+                System.clearProperty("socksProxyPort");
+
                 // 创建客户端时添加超时配置
                 com.aliyun.oss.ClientBuilderConfiguration conf = new com.aliyun.oss.ClientBuilderConfiguration();
                 conf.setConnectionTimeout(30000); // 连接超时30秒

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jswm.mapper.UserSettingMapper">
+    <select id="selectByUserId" resultType="com.jswm.entity.UserSetting">
+        SELECT * FROM user_setting WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insert" parameterType="com.jswm.entity.UserSetting">
+        INSERT INTO user_setting (user_id, order_notify, promotion_notify, system_notify, dark_mode)
+        VALUES (#{userId}, #{orderNotify}, #{promotionNotify}, #{systemNotify}, #{darkMode})
+    </insert>
+
+    <update id="update" parameterType="com.jswm.entity.UserSetting">
+        UPDATE user_setting
+        SET order_notify = #{orderNotify},
+            promotion_notify = #{promotionNotify},
+            system_notify = #{systemNotify},
+            dark_mode = #{darkMode}
+        WHERE id = #{id}
+    </update>
+</mapper>
