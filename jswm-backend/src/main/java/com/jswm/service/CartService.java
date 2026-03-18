@@ -13,7 +13,7 @@ public interface CartService {
     List<CartItemDTO> getCartDetailByUserId(Long userId);
 
     void addToCart(Long userId, Long dishId, Long merchantId, Integer quantity);
-    void updateCartItem(Long id, Integer quantity);
-    void deleteCartItem(Long id);
+    void updateCartItem(Long userId, Long id, Integer quantity);
+    void deleteCartItem(Long userId, Long id);
     void clearCart(Long userId);
 }

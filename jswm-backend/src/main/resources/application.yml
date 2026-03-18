@@ -76,3 +76,7 @@ aliyun:
 upload:
   path: ./uploads
   url-prefix: /uploads
+
+jwt:
+  secret: ${JWT_SECRET:jswm-dev-secret-key-change-me-at-least-32-bytes}
+  expiration: ${JWT_EXPIRATION:604800000}

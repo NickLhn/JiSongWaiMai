@@ -1,6 +1,7 @@
 package com.jswm.controller;
 
 import com.jswm.common.Result;
+import com.jswm.exception.BusinessException;
 import com.jswm.utils.OssUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,9 +46,13 @@ public class FileUploadController {
         if (file.isEmpty()) {
             return Result.error("请选择文件");
         }
+        directory = sanitizeDirectory(directory);
 
         // 获取文件后缀
         String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.contains(".")) {
+            return Result.error("文件名不合法");
+        }
         String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
 
         // 检查文件类型
@@ -79,7 +84,11 @@ public class FileUploadController {
      */
     private String uploadToLocal(MultipartFile file, String directory) throws IOException {
         // 创建目录
-        Path dirPath = Paths.get(uploadPath, directory);
+        Path basePath = Paths.get(uploadPath).toAbsolutePath().normalize();
+        Path dirPath = basePath.resolve(directory).normalize();
+        if (!dirPath.startsWith(basePath)) {
+            throw new IOException("非法上传目录");
+        }
         if (!Files.exists(dirPath)) {
             Files.createDirectories(dirPath);
         }
@@ -112,7 +121,14 @@ public class FileUploadController {
             // 本地文件删除
             if (fileUrl.startsWith(urlPrefix)) {
                 String relativePath = fileUrl.substring(urlPrefix.length());
-                Path filePath = Paths.get(uploadPath, relativePath);
+                if (relativePath.startsWith("/")) {
+                    relativePath = relativePath.substring(1);
+                }
+                Path basePath = Paths.get(uploadPath).toAbsolutePath().normalize();
+                Path filePath = basePath.resolve(relativePath).normalize();
+                if (!filePath.startsWith(basePath)) {
+                    return Result.error("非法文件路径");
+                }
                 Files.deleteIfExists(filePath);
                 return Result.success("删除成功", null);
             }
@@ -122,5 +138,16 @@ public class FileUploadController {
             log.error("文件删除失败", e);
             return Result.error("删除失败: " + e.getMessage());
         }
+    }
+
+    private String sanitizeDirectory(String directory) {
+        if (directory == null || directory.trim().isEmpty()) {
+            return "images";
+        }
+        String normalized = directory.trim();
+        if (!normalized.matches("[a-zA-Z0-9/_-]+")) {
+            throw new BusinessException(400, "非法目录名称");
+        }
+        return normalized;
     }
 }

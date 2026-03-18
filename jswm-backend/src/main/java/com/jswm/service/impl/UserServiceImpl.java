@@ -1,6 +1,7 @@
 package com.jswm.service.impl;
 
 import com.jswm.entity.SysUser;
+import com.jswm.common.Constants;
 import com.jswm.exception.BusinessException;
 import com.jswm.mapper.SysUserMapper;
 import com.jswm.service.UserService;
@@ -46,8 +47,11 @@ public class UserServiceImpl implements UserService {
         user.setPassword(BCrypt.hashpw(password, BCrypt.gensalt()));
         user.setPhone(phone);
         user.setRealName(realName);
-        // 角色：0=学生，1=商家，2=管理员（仅后台创建）
-        user.setRole(role != null ? role : 0);
+        int targetRole = role != null ? role : Constants.USER_ROLE_STUDENT;
+        if (targetRole != Constants.USER_ROLE_STUDENT && targetRole != Constants.USER_ROLE_MERCHANT) {
+            throw new BusinessException(1006, "不支持的注册角色");
+        }
+        user.setRole(targetRole);
         user.setStatus(1);
         userMapper.insert(user);
         return user;

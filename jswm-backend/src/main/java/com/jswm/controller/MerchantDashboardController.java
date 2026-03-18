@@ -1,10 +1,13 @@
 package com.jswm.controller;
 
+import com.jswm.common.AuthContext;
 import com.jswm.common.Result;
 import com.jswm.dto.MerchantDashboardDTO;
 import com.jswm.entity.BizOrder;
+import com.jswm.entity.BizMerchant;
+import com.jswm.exception.BusinessException;
+import com.jswm.service.MerchantService;
 import com.jswm.service.OrderService;
-import com.jswm.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,9 +27,16 @@ public class MerchantDashboardController {
     @Autowired
     private OrderService orderService;
 
+    @Autowired
+    private MerchantService merchantService;
+
     @GetMapping
-    public Result<MerchantDashboardDTO> getDashboardData(@RequestHeader("Authorization") String token) {
-        Long merchantId = JwtUtils.getUserId(token);
+    public Result<MerchantDashboardDTO> getDashboardData() {
+        BizMerchant merchant = merchantService.getMerchantByUserId(AuthContext.getUserId());
+        if (merchant == null) {
+            throw new BusinessException(2002, "未找到店铺信息");
+        }
+        Long merchantId = merchant.getId();
         
         // 获取商家所有订单
         List<BizOrder> allOrders = orderService.getOrderList(null, merchantId, null);

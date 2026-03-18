@@ -157,8 +157,9 @@ const maskPhone = (phone) => {
 }
 
 const selectAddress = (address) => {
-  if (route.query.select === '1') {
+  if (route.query.select === '1' || route.query.select === 'true') {
     // 从下单页面过来，选择地址后返回
+    sessionStorage.setItem('selectedAddressId', String(address.id))
     router.back()
   }
 }

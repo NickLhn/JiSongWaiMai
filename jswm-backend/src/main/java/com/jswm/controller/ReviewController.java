@@ -1,10 +1,10 @@
 package com.jswm.controller;
 
-import com.jswm.common.PageResult;
+import com.jswm.common.AuthContext;
+import com.jswm.common.Constants;
 import com.jswm.common.Result;
 import com.jswm.entity.BizReview;
 import com.jswm.service.ReviewService;
-import com.jswm.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,10 +56,10 @@ public class ReviewController {
      * 获取我的评价列表
      */
     @GetMapping("/my")
-    public Result<List<BizReview>> getMyReviews(@RequestHeader("Authorization") String token,
-                                                 @RequestParam(defaultValue = "1") Integer page,
+    public Result<List<BizReview>> getMyReviews(@RequestParam(defaultValue = "1") Integer page,
                                                  @RequestParam(defaultValue = "10") Integer pageSize) {
-        Long userId = JwtUtils.getUserId(token);
+        AuthContext.requireRole(Constants.USER_ROLE_STUDENT);
+        Long userId = AuthContext.getUserId();
         List<BizReview> list = reviewService.getUserReviews(userId, page, pageSize);
         return Result.success(list);
     }
@@ -68,9 +68,9 @@ public class ReviewController {
      * 提交评价
      */
     @PostMapping
-    public Result<Void> submitReview(@RequestHeader("Authorization") String token,
-                                      @Valid @RequestBody BizReview review) {
-        Long userId = JwtUtils.getUserId(token);
+    public Result<Void> submitReview(@Valid @RequestBody BizReview review) {
+        AuthContext.requireRole(Constants.USER_ROLE_STUDENT);
+        Long userId = AuthContext.getUserId();
         reviewService.submitReview(userId, review);
         return Result.success("评价成功", null);
     }
@@ -79,10 +79,10 @@ public class ReviewController {
      * 删除评价（仅本人或管理员）
      */
     @DeleteMapping("/{id}")
-    public Result<Void> deleteReview(@RequestHeader("Authorization") String token,
-                                      @PathVariable Long id) {
-        Long userId = JwtUtils.getUserId(token);
-        Integer role = JwtUtils.getRole(token);
+    public Result<Void> deleteReview(@PathVariable Long id) {
+        AuthContext.requireRole(Constants.USER_ROLE_STUDENT, Constants.USER_ROLE_ADMIN);
+        Long userId = AuthContext.getUserId();
+        Integer role = AuthContext.getRole();
         reviewService.deleteReview(id, userId, role);
         return Result.success("删除成功", null);
     }

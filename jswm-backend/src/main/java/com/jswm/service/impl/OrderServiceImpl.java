@@ -75,6 +75,14 @@ public class OrderServiceImpl implements OrderService {
         if (cartItems == null || cartItems.isEmpty()) {
             throw new BusinessException(3003, "购物车为空");
         }
+        if (merchantId == null) {
+            throw new BusinessException(3005, "商家信息不能为空");
+        }
+        boolean hasOtherMerchant = cartItems.stream()
+                .anyMatch(item -> !merchantId.equals(item.getMerchantId()));
+        if (hasOtherMerchant) {
+            throw new BusinessException(3010, "购物车包含其他商家商品，请先清空后再结算");
+        }
 
         // 2. 计算订单金额
         BigDecimal totalAmount = BigDecimal.ZERO;

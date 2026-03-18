@@ -1,8 +1,9 @@
 package com.jswm.controller;
 
+import com.jswm.common.AuthContext;
+import com.jswm.common.Constants;
 import com.jswm.common.Result;
 import com.jswm.dto.CartItemDTO;
-import com.jswm.entity.BizCart;
 import com.jswm.service.CartService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -16,38 +17,41 @@ public class CartController {
     private CartService cartService;
 
     @GetMapping
-    public Result<List<CartItemDTO>> getCart(@RequestHeader("Authorization") String token) {
-        Long userId = com.jswm.utils.JwtUtils.getUserId(token);
+    public Result<List<CartItemDTO>> getCart() {
+        AuthContext.requireRole(Constants.USER_ROLE_STUDENT);
+        Long userId = AuthContext.getUserId();
         List<CartItemDTO> list = cartService.getCartDetailByUserId(userId);
         return Result.success(list);
     }
 
     @PostMapping
-    public Result<Void> addToCart(@RequestHeader("Authorization") String token,
-                                   @RequestParam Long dishId,
+    public Result<Void> addToCart(@RequestParam Long dishId,
                                    @RequestParam Long merchantId,
                                    @RequestParam(defaultValue = "1") Integer quantity) {
-        Long userId = com.jswm.utils.JwtUtils.getUserId(token);
+        AuthContext.requireRole(Constants.USER_ROLE_STUDENT);
+        Long userId = AuthContext.getUserId();
         cartService.addToCart(userId, dishId, merchantId, quantity);
         return Result.success("添加成功", null);
     }
 
     @PutMapping("/{id}")
     public Result<Void> updateCartItem(@PathVariable Long id, @RequestParam Integer quantity) {
-        cartService.updateCartItem(id, quantity);
+        AuthContext.requireRole(Constants.USER_ROLE_STUDENT);
+        cartService.updateCartItem(AuthContext.getUserId(), id, quantity);
         return Result.success("更新成功", null);
     }
 
     @DeleteMapping("/{id}")
     public Result<Void> deleteCartItem(@PathVariable Long id) {
-        cartService.deleteCartItem(id);
+        AuthContext.requireRole(Constants.USER_ROLE_STUDENT);
+        cartService.deleteCartItem(AuthContext.getUserId(), id);
         return Result.success("删除成功", null);
     }
 
     @DeleteMapping
-    public Result<Void> clearCart(@RequestHeader("Authorization") String token) {
-        Long userId = com.jswm.utils.JwtUtils.getUserId(token);
-        cartService.clearCart(userId);
+    public Result<Void> clearCart() {
+        AuthContext.requireRole(Constants.USER_ROLE_STUDENT);
+        cartService.clearCart(AuthContext.getUserId());
         return Result.success("清空成功", null);
     }
 }

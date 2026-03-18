@@ -27,6 +27,7 @@ public interface BizReviewMapper {
                                     @Param("pageSize") Integer pageSize);
 
     int insert(BizReview review);
+    int updateById(BizReview review);
 
     int deleteById(Long id);
 

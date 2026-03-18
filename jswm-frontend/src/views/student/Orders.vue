@@ -159,7 +159,7 @@
                   class="btn-review"
                   @click.stop="reviewOrder(order)"
                 >
-                  评价
+                  评价/修改
                 </button>
                 <button 
                   v-if="[0, 1, 2].includes(order.status)" 

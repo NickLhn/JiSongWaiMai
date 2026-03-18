@@ -85,8 +85,15 @@ public class AdminUserController {
 
     @PutMapping("/{id}")
     public Result<Void> updateUser(@PathVariable Long id, @RequestBody SysUser user) {
-        user.setId(id);
-        userMapper.updateById(user);
+        SysUser updateUser = new SysUser();
+        updateUser.setId(id);
+        updateUser.setRealName(user.getRealName());
+        updateUser.setPhone(user.getPhone());
+        updateUser.setEmail(user.getEmail());
+        updateUser.setAvatar(user.getAvatar());
+        updateUser.setRole(user.getRole());
+        updateUser.setStatus(user.getStatus());
+        userMapper.updateById(updateUser);
         return Result.success();
     }
 }

@@ -298,7 +298,7 @@ const addToCart = async (dish) => {
     await loadCart()
     ElMessage.success('已加入购物车')
   } catch (error) {
-    ElMessage.error('添加失败')
+    ElMessage.error(error.message || '添加失败')
   }
 }
 
@@ -325,7 +325,7 @@ const clearCart = async () => {
     showCartDrawer.value = false
     ElMessage.success('购物车已清空')
   } catch (error) {
-    ElMessage.error('清空失败')
+    ElMessage.error(error.message || '清空失败')
   }
 }
 

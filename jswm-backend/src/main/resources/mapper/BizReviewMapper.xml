@@ -55,6 +55,16 @@
         VALUES (#{orderId}, #{userId}, #{merchantId}, #{dishId}, #{rating}, #{content}, #{images}, #{isAnonymous})
     </insert>
 
+    <update id="updateById" parameterType="com.jswm.entity.BizReview">
+        UPDATE biz_review
+        SET rating = #{rating},
+            content = #{content},
+            images = #{images},
+            is_anonymous = #{isAnonymous},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
     <delete id="deleteById">
         DELETE FROM biz_review WHERE id = #{id}
     </delete>

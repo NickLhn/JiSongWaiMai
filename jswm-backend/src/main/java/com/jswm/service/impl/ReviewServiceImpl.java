@@ -99,9 +99,17 @@ public class ReviewServiceImpl implements ReviewService {
         // 3. 检查是否已评价
         BizReview existingReview = reviewMapper.selectByOrderId(review.getOrderId());
         if (existingReview != null) {
-            throw new BusinessException(4004, "该订单已评价");
+            if (!existingReview.getUserId().equals(userId)) {
+                throw new BusinessException(4004, "该订单已评价");
+            }
+            existingReview.setRating(review.getRating());
+            existingReview.setContent(review.getContent());
+            existingReview.setImages(review.getImages());
+            existingReview.setIsAnonymous(review.getIsAnonymous());
+            reviewMapper.updateById(existingReview);
+            return;
         }
-        
+
         // 4. 设置评价信息
         review.setUserId(userId);
         review.setMerchantId(order.getMerchantId());

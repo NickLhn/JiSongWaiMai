@@ -1,9 +1,6 @@
 package com.jswm.common;
 
 public interface Constants {
-    String JWT_SECRET = "jswm-secret-key-2025-campus-food-ordering-system";
-    Long JWT_EXPIRATION = 7 * 24 * 60 * 60 * 1000L;
-
     String REDIS_KEY_PREFIX = "jswm:";
     String REDIS_KEY_TOKEN = REDIS_KEY_PREFIX + "token:";
     String REDIS_KEY_CAPTCHA = REDIS_KEY_PREFIX + "captcha:";

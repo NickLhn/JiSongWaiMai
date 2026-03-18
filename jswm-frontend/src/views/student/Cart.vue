@@ -94,6 +94,11 @@ const merchantName = computed(() => {
   return cartItems.value[0]?.merchantName || ''
 })
 
+const hasMultipleMerchants = computed(() => {
+  const merchantIds = new Set(cartItems.value.map(item => item.merchantId))
+  return merchantIds.size > 1
+})
+
 const cartTotal = computed(() => {
   return cartItems.value.reduce((sum, item) => sum + (item.dishPrice * item.quantity), 0).toFixed(2)
 })
@@ -150,6 +155,10 @@ const clearCart = async () => {
 }
 
 const goToCheckout = () => {
+  if (hasMultipleMerchants.value) {
+    ElMessage.warning('购物车中包含多个商家商品，请先清理后再结算')
+    return
+  }
   router.push('/orders/create')
 }
 

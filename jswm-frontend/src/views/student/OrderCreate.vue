@@ -113,6 +113,11 @@ const merchantId = computed(() => {
   return cartItems.value[0]?.merchantId || null
 })
 
+const hasMultipleMerchants = computed(() => {
+  const merchantIds = new Set(cartItems.value.map(item => item.merchantId))
+  return merchantIds.size > 1
+})
+
 const cartTotal = computed(() => {
   return cartItems.value.reduce((sum, item) => sum + (item.dishPrice * item.quantity), 0).toFixed(2)
 })
@@ -124,6 +129,11 @@ const loadCart = async () => {
     if (cartItems.value.length === 0) {
       ElMessage.warning('购物车为空')
       router.replace('/cart')
+      return
+    }
+    if (hasMultipleMerchants.value) {
+      ElMessage.warning('购物车包含多个商家商品，请先清理后再结算')
+      router.replace('/cart')
     }
   } catch (error) {
     ElMessage.error('加载购物车失败')
@@ -134,8 +144,14 @@ const loadAddresses = async () => {
   try {
     const res = await getAddresses()
     addresses.value = res.data || []
-    // 选择默认地址
-    selectedAddress.value = addresses.value.find(addr => addr.isDefault) || addresses.value[0]
+    const selectedAddressId = sessionStorage.getItem('selectedAddressId')
+    if (selectedAddressId) {
+      selectedAddress.value = addresses.value.find(addr => String(addr.id) === selectedAddressId) || null
+      sessionStorage.removeItem('selectedAddressId')
+    }
+    if (!selectedAddress.value) {
+      selectedAddress.value = addresses.value.find(addr => addr.isDefault) || addresses.value[0]
+    }
   } catch (error) {
     console.error('加载地址失败', error)
   }
@@ -153,6 +169,11 @@ const submitOrder = async () => {
   
   if (!merchantId.value) {
     ElMessage.error('商家信息错误')
+    return
+  }
+  if (hasMultipleMerchants.value) {
+    ElMessage.error('购物车包含多个商家商品，请先清理后再提交')
+    router.push('/cart')
     return
   }
 
